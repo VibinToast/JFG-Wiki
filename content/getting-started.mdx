@@ -12,7 +12,8 @@ What you need to play mods, to make them, and where everything goes.
 <Steps>
 ### Install the port
 
-Install **Jet Force Gemini: Recompiled** and point it at your own US ROM.
+Install **[Jet Force Gemini: Recompiled](https://github.com/VibinToast/JetForceGemini-Recomp)** (its Releases page
+has the downloads) and point it at your own US ROM.
 
 ### Put the mod in the mods folder
 
@@ -39,16 +40,18 @@ numbers its levels got, conflicts, and script errors.
 | You need | For |
 |---|---|
 | Your own **US ROM** of Jet Force Gemini | Studio reads it to show the game's levels, objects and models while you edit; the build reads the entries your pack copies. |
-| **JFG-Studio** (Python 3.12) | The level and pack editor. |
+| **[JFG-Studio](https://github.com/VibinToast/JFG-Studio)** (Python 3.12) | The level and pack editor. |
 | The **decomp** checkout | Studio uses its `tools/jfgformats` to read and write the game's formats. |
-| **Jet Force Gemini: Recompiled** | Studio's Play button installs your pack there and starts the game in your level. |
+| **[Jet Force Gemini: Recompiled](https://github.com/VibinToast/JetForceGemini-Recomp)** | Studio's Play button installs your pack there and starts the game in your level. |
 | **Blender 3.5+** (optional) | Modelling level geometry; the [jfg64 add-on](/blender) helps. |
 | LLVM 18.1.8 and RecompModTool (optional) | Only for [C code mods](/api/c). |
 
 ## Installing JFG-Studio
 
+JFG-Studio's source is on GitHub: [VibinToast/JFG-Studio](https://github.com/VibinToast/JFG-Studio).
+
 ```powershell
-git clone <forgejo>/VibinToast/JFG-Studio.git JFG-Studio
+git clone https://github.com/VibinToast/JFG-Studio.git
 cd JFG-Studio
 python -m venv .venv
 .venv\Scripts\python -m pip install -e .[dev]

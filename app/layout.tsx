@@ -18,8 +18,11 @@ export const metadata: Metadata = {
   description: 'Make planets, levels, enemies, music, scripts and texture packs for Jet Force Gemini: Recompiled.',
 };
 
+const RECOMP_REPO = 'https://github.com/VibinToast/JetForceGemini-Recomp';
+
 const navbar = (
   <Navbar
+    projectLink={RECOMP_REPO}
     logo={
       <span className="jfg-logo">
         <span className="jfg-logo-mark">JFG</span> Modding Wiki
@@ -35,8 +38,8 @@ const navbar = (
 const footer = (
   <Footer>
     <span>
-      Jet Force Gemini: Recompiled modding wiki by VibinToast. You need your own copy of the game: nothing from the game
-      is in this wiki or in what the tools make.
+      <a href={RECOMP_REPO}>Jet Force Gemini: Recompiled</a> modding wiki by VibinToast. You need your own copy of the
+      game: nothing from the game is in this wiki or in what the tools make.
     </span>
   </Footer>
 );

@@ -48,9 +48,15 @@ article h1 { font-size: 2.3rem; }
   margin-right: 4px;
   letter-spacing: 0.08em;
 }
+footer a { text-decoration: underline; text-underline-offset: 2px; }
 .jfg-nav-link { font-size: 0.875rem; opacity: 0.75; }
 .jfg-nav-link:hover { opacity: 1; }
 @media (max-width: 640px) { .jfg-nav-link { display: none; } }
+
+/* Sidebar folders: Nextra's Collapse drops overflow:hidden the moment a folder opens while its height still grows from
+   0, so the opening list draws over the items below it for the length of the animation. Keep it clipped. */
+.nextra-sidebar li > div:has(> ul),
+.nextra-mobile-nav li > div:has(> ul) { overflow: hidden; }
 
 .jfg-chip {
   display: inline-block;
