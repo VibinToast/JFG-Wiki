@@ -48,6 +48,41 @@ Save and **Play**. Reach the finish: the next planet appears on the map. On the 
 galaxy and **L** back to the game's (on a controller also RB/LB and the D-pad).
 </Steps>
 
+## Planet regions
+
+In the game, each planet is split into **regions**. Leaving a region by an exit shows the **"Area Cleared"** stats
+screen (Tribals rescued, killed and remaining, the time, then your weapons), and entering one shows its name with the
+planet's and your continues. Your planets work the same way once their levels name them:
+
+<Steps>
+### Give each level its planet
+
+In the **Level** window, set **Planet** on every level of the planet. A planet's levels together are one region: moving
+between them shows nothing; an exit to another planet's level, or to a stock level, shows the stats screen first.
+
+### Keep the exits' stats flag
+
+Exits have **arg1A** 1 by default, as most of the game's exits do. Set it to 0 on an exit that should leave without
+the stats screen.
+
+### Play it
+
+Leave the planet: the stats screen waits for a button press, then the next level loads with the new planet's title:
+the planet's name, the galaxy's name under it, and your continues.
+</Steps>
+
+Being a region brings the game's other region rules with it:
+
+- **Continues**: two each time the hero enters the planet. Dying with none left is game over.
+- **Restarts**: after a death the hero starts again at the level where the planet was entered.
+- **Leaving resets the region** you came from: its Tribal progress and killed squads start again when you return,
+  as in the game. A portal out of a stock level shows that stock region's stats screen too.
+- **Records**: the stats screen keeps the region's best kills and time in the save, as the game's regions do.
+
+The port gives mods' regions the numbers 31–39 (the game uses 1–30; the save keeps 40), so all the mods loaded
+together have room for **nine** planets with regions. A planet can have up to 32 levels. Studio warns past either
+limit.
+
 <Callout type="info">
 Opened, entered and completed planets are kept per save file, in `saves/<save>_worlds.json` next to the game's save,
 written when the game saves.

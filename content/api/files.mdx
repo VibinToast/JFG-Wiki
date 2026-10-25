@@ -60,7 +60,8 @@ game never sees the difference.
         { "op": "append", "hex": "00a9000e..." } ] }
   ],
   "objtypes": [ { "append": "objtype_fire_ant", "def": "objdef_fire_ant", "like": 120 } ],
-  "animRows": [ { "model": "model_fire_ant", "from": 904 } ]
+  "animRows": [ { "model": "model_fire_ant", "from": 904 } ],
+  "regions": [ { "append": "region_zephyra", "name": "Zephyra", "world": "Zephyra Expanse" } ]
 }
 ```
 
@@ -100,6 +101,21 @@ other data).
 
 `"objtypes"` add object ids for appended definitions; `"like"` is the stock id the squad code treats the new one as.
 `"animRows"` give an appended model a stock model's animations and joint slots.
+
+### Regions
+
+`"regions"` add Tribal and stats regions (a level header's byte `0x102`). The port numbers them 31–39 like appended
+entries (kept in `mod_ids.json`); past 39 a region is refused and its levels keep the region their headers have. A
+level joins one with a fixup:
+
+```json
+{ "at": 258, "type": "u8", "ref": "region_zephyra" }
+```
+
+A level in a region gets the game's region behaviour: the stats screen when an exit with bit 0 of its `0x1A` byte set
+leads into another region, the area title with `"name"` and `"world"` when it's entered, and continues. The port
+lengthens the game's Tribal table so mods' regions have 0 Tribals. Each level of a region needs its own index inside
+it (header byte `0x103`, 0–31). Studio writes all of this from the levels' **Planet**.
 
 ## jfg_world.json
 

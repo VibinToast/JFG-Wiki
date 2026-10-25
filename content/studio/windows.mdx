@@ -74,7 +74,9 @@ The open level's objects. Click to select, <kbd>Ctrl</kbd>+click to add.
 - **Name** is for you only (the game doesn't see it).
 - **Transform**: position, and **Drop to floor**.
 - **Destination** (exits): **Leads to** any of your levels or a stock level, the **Start point** to arrive at (only
-  ones the level has), and **Create return exit**, which adds the way back in your target level.
+  ones the level has), and **Create return exit**, which adds the way back in your target level. An exit's
+  **arg1A** field is 1 by default, as on most of the game's exits: it shows the stats screen when the exit leads into
+  another region. Set it to 0 for an exit that shouldn't.
 - The type's **fields**: named values are lists, the rest numbers. Dimmed values still come from the stock entry the
   object was copied from. "Partly decoded" means some of the entry's bytes are kept as they are.
 - **Entry** (closed): the raw bytes, for checking.
@@ -84,11 +86,15 @@ The open level's objects. Click to select, <kbd>Ctrl</kbd>+click to add.
 <Figure src="/img/studio-level.png" alt="The Level window" caption="The open level's settings." width={345} />
 
 - **Name**, **World** (0–15; 15 is free in the stock game) and **Track** (one of your `.glb` files).
+- **Planet**: puts the level in that planet's **region**. An exit that leaves the planet then shows the game's
+  "Area Cleared" stats screen, and entering the planet shows its name, its galaxy and the continues. The build sets the
+  region for you ([Planet regions](/tutorials/planet#planet-regions)). *None* keeps the level out of any region: no
+  stats screen, no continues.
 - **Music and sound**: a stock tune or one of your OGGs (**Add OGG music…**), and three ambient loops.
 - **Sky and fog**: a stock sky or the clear colour, **Fog** with its colour, start, end and third value (the game's
   depth units, 900–1023).
-- **Camera and effects**: field of view, light slots, weather, day length, underwater lights, the saved-flag region,
-  night vision, refraction, blur.
+- **Camera and effects**: field of view, light slots, weather, day length, underwater lights, the saved-flag region
+  (a planet's levels get theirs from the build), night vision, refraction, blur.
 
 ## Project
 
