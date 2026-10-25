@@ -1,0 +1,113 @@
+---
+title: Weapons API
+description: What a pack can change about the heroes' weapons, which fields each weapon uses, and the plan for new weapons.
+---
+
+# Weapons
+
+What a pack can change about the heroes' weapons today, which fields matter for which weapon, and what's planned for
+new weapons.
+
+## How weapons work in the game
+
+The game describes the heroes' weapons in one table, one row per weapon slot. A shot reads its row when it's fired and
+hands the values to the weapon's own code (a laser bolt, a rocket, a grenade). The port lets a pack write its own
+values into those rows while the pack is loaded.
+
+<Callout type="info">
+**The player's settings win.** The port's F9 Weapons tab lets the player change weapons too. When the player ticks
+"Modify" for a weapon there, their values are used instead of the pack's. With "Modify" off the pack's values apply,
+and without a pack the game's own.
+</Callout>
+
+## Changing a weapon
+
+### Without code: Studio's Weapons window
+
+Tick a field, set its value, and save. Studio writes `weapons.json` and the build turns it into a small Lua script
+(`scripts/_weapons.lua`) that calls `jfg.weapon` for you. See [A stronger pistol](/tutorials/weapons).
+
+### From Lua
+
+```lua
+-- Weapon 0 (the pistol): faster, harder-hitting shots
+jfg.weapon(0, { damage = 12, delay = 6, speed = 180 })
+
+-- Read what is in play now (after the player's own settings)
+local s = jfg.weapon_stats(0)
+jfg.log("pistol damage", s.damage, "delay", s.delay)
+```
+
+`jfg.weapon` raises a Lua error for an unknown field or a slot outside 0–14. Values are clamped to the ranges below. A
+pack usually sets its weapons once, at the top of a script; they stay for as long as the pack is loaded.
+
+## Fields
+
+| Field | Range | What it does |
+|---|---|---|
+| `damage` | 0–255 | The projectile's power. For laser bolts it also picks the bolt's size class, as in the original. |
+| `delay` | 0–255 | Frames between shots (at 30 fps; the port scales it at 60). |
+| `throw_delay` | 1–127 | Thrown weapons: frames from the button press to the release. |
+| `lifetime` | 1–255 | How long the projectile lives, so its range. Laser bolts live lifetime × 6 frames. |
+| `spread_x` | 0–8192 | Random sideways spread added to the aim (65536 is a full turn). |
+| `spread_y` | 0–8192 | Random up-down spread. |
+| `speed` | 0.1–2000 | Projectile or throw speed. |
+
+## Weapon slots and which fields they use
+
+A field a weapon doesn't use is accepted but changes nothing. ✓ marks the fields each weapon uses.
+
+| Slot | Weapon | damage | delay | speed | lifetime | spread | throw_delay |
+|---|---|---|---|---|---|---|---|
+| 0 | Pistol | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| 1 | Homing Missiles | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| 2 | Machine Gun | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| 3 | Plasma Shotgun | | ✓ | ✓ | ✓ | ✓ | |
+| 4 | Shocker | | ✓ | | | ✓ | |
+| 5 | Tri-Rocket Launcher | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| 6 | Flamethrower | | | | | ✓ | |
+| 7 | Sniper Rifle | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| 8 | Grenades | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| 9 | Shuriken | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| 10 | Fish Food | | ✓ | ✓ | ✓ | | ✓ |
+| 11 | Timed Mines | ✓ | ✓ | ✓ | ✓ | | |
+| 12 | Remote Mines | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| 13 | Flares | | ✓ | ✓ | ✓ | | ✓ |
+| 14 | Cluster Bombs | | ✓ | ✓ | ✓ | | ✓ |
+
+<Callout type="warning">
+Studio's Weapons window lists Weapon 0 to Weapon 15 (the game has a 16th slot), but packs can set slots 0–14 only. A
+value for slot 15 makes the weapons script stop with an error in `jfg_mods.log`, so leave it empty.
+</Callout>
+
+## Player-only settings
+
+The F9 Weapons tab has four more settings packs can't set yet <Status s="partial" />:
+
+- **Laser bolt size** (pistol, machine gun, sniper rifle), in percent.
+- **Plasma shotgun charge speed**, in percent.
+- **Mine limit**: how many mines can be out at once (both mine types share it).
+- **Pistol rapid-fire heat**: "no rapid-fire limit" removes the heat that stops the pistol when you mash fire.
+
+## Models and textures of weapons
+
+There's no per-weapon model API yet. A pack can still replace the gun or projectile *model and texture entries*
+through [jfg_assets.json](/api/files#jfg_assetsjson) <Status s="partial" />. That changes the model everywhere the
+game uses it, for every hero, and you need the entry numbers from the decomp's tools.
+
+## Planned: new weapons
+
+The design adds weapons without taking stock slots <Status s="planned" />:
+
+- **Virtual slots.** New weapons get handles 16 and up. While one is selected, the game's own current slot is its
+  *base* weapon, so aim, reticle and animations behave like the base; the port swaps the gun model and the HUD icon
+  and fires the pack's projectile.
+- **Registering**: `jfg_weapon_register` with a name, base slot, HUD texture, gun model per hero, max and starting
+  ammo, rate, mode (shot, thrown, charge, beam), projectile kind and damage.
+- **Giving and ammo**: `jfg_weapon_give`, `jfg_weapon_has`, `jfg_weapon_get_ammo`, `jfg_weapon_set_ammo`,
+  `jfg_weapon_current`, kept per save file.
+- **Events**: `jfg_on_weapon_fire` (before a shot: cancel it or spawn your own), `jfg_on_weapon_select`,
+  `jfg_on_projectile_hit` (change the damage or cancel it).
+
+Waiting on the decomp: the model and icon swap needs the gun-model choice and the HUD weapon strip named, and hit
+events need the game's hit and damage path. Registering, giving, ammo, firing and stats could be built now.

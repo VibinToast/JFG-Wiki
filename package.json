@@ -1,0 +1,28 @@
+{
+  "name": "jfg-wiki",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jet Force Gemini: Recompiled modding wiki (jfg.vibintoast.com)",
+  "scripts": {
+    "dev": "next dev -p 3100",
+    "build": "next build",
+    "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
+    "start": "npx serve out -l 3100"
+  },
+  "dependencies": {
+    "next": "^15.1.6",
+    "nextra": "^4",
+    "nextra-theme-docs": "^4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "overrides": {
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "pagefind": "^1",
+    "typescript": "^5"
+  }
+}

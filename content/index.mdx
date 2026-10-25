@@ -1,0 +1,54 @@
+---
+title: Jet Force Gemini modding
+description: Make planets, levels, enemies, music, scripts and texture packs for Jet Force Gemini Recompiled.
+---
+
+# Jet Force Gemini modding
+
+Make new planets, levels, enemies, music, weapon tuning, scripts and texture packs for **Jet Force Gemini:
+Recompiled**, the PC port. Build them in JFG-Studio, model levels in Blender, or write code against the port's
+modding API.
+
+<Figure
+  src="/img/studio-overview.png"
+  alt="JFG-Studio with the Zephyra example open: the Hierarchy on the left, Zephyra Landing in the Scene, the Inspector on the right and the Prefabs at the bottom"
+  caption="JFG-Studio with the example world open: Zephyra Landing, its ant squad selected."
+/>
+
+## Where to start
+
+<Cards>
+  <Cards.Card title="Getting started" href="/getting-started" arrow />
+  <Cards.Card title="Your first planet" href="/studio/first-mod" arrow />
+  <Cards.Card title="The example world" href="/studio/example-world" arrow />
+  <Cards.Card title="What can be modified" href="/what-can-be-modified" arrow />
+  <Cards.Card title="Blender add-on" href="/blender" arrow />
+  <Cards.Card title="API status" href="/api" arrow />
+</Cards>
+
+## Three ways to make a mod
+
+| Way | For | You write |
+|---|---|---|
+| [JFG-Studio](/studio) | Levels, planets, enemies, music, triggers, weapons | Nothing: Studio builds the pack. Lua is optional. |
+| [Lua scripts](/api/lua) | Game logic in a pack: messages, doors, spawns, planets, weapons | Lua 5.4, in Studio's Scripts window or any editor |
+| [C code mods](/api/c) | Anything else: hook or replace any game function | C, compiled for the N64's CPU |
+
+## Tutorials
+
+<Cards>
+  <Cards.Card title="A stronger pistol" href="/tutorials/weapons" arrow />
+  <Cards.Card title="Your first script" href="/tutorials/script" arrow />
+  <Cards.Card title="Custom music" href="/tutorials/music" arrow />
+  <Cards.Card title="A new enemy look" href="/tutorials/reskin" arrow />
+  <Cards.Card title="A galaxy of your own" href="/tutorials/planet" arrow />
+  <Cards.Card title="Change a stock level" href="/tutorials/stock-level" arrow />
+  <Cards.Card title="A first code mod" href="/tutorials/c-mod" arrow />
+  <Cards.Card title="An HD texture pack" href="/tutorials/texture-pack" arrow />
+</Cards>
+
+<Callout type="error">
+**Your own copy of the game only.** The tools read your own US ROM. Never share the ROM, Studio's catalog, or
+anything exported from them (stock models, textures, tracks). Packs Studio builds carry only your own content plus
+references to the game's, which the port fills in from each player's own copy.
+</Callout>

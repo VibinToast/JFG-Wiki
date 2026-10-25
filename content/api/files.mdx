@@ -1,0 +1,156 @@
+---
+title: Pack file formats
+description: The files inside a Jet Force Gemini Recompiled .nrm pack - mod.json, jfg_assets.json, jfg_world.json, jfg_music.json and more.
+---
+
+# Pack file formats
+
+An `.nrm` is a zip. What it does depends on the files at its top. Studio writes all of these; this page is for reading
+them, checking a build, or making a pack by hand.
+
+| File | Makes the pack… | Applied | Status |
+|---|---|---|---|
+| `mod.json` | a mod: id, version, name, authors, `game_id`, `minimum_recomp_version`, dependencies | always | <Status s="built" /> |
+| `jfg_assets.json` | a data mod: replaces, appends and patches game data | game start | <Status s="built" /> |
+| `jfg_world.json` | add planets and galaxies to the planet map | game start | <Status s="built" /> |
+| `jfg_music.json` | play its own OGG music in levels | game start | <Status s="built" /> |
+| `jfg_scripts.json` | run Lua scripts | game start | <Status s="built" /> |
+| `rt64.json` and images | a texture pack (any resolution) | at once; switchable while playing | <Status s="built" /> |
+| `patch.bps` | patch the whole ROM (one such mod at a time; Studio uses it only for planets that take over a stock map point) | game start | <Status s="built" /> |
+| code (`mod_binary.bin`, `mod_syms.bin`) | a code mod (from RecompModTool) | game start | <Status s="built" /> |
+
+One pack can be several kinds at once. A data-only pack needs no code and no RecompModTool: a zip with `mod.json` and
+its files is enough.
+
+## mod.json
+
+```json
+{
+  "game_id": "jet-force-gemini",
+  "id": "yourname.my_planet",
+  "version": "0.1.0",
+  "display_name": "My Planet",
+  "authors": ["you"],
+  "minimum_recomp_version": "1.1.8",
+  "dependencies": []
+}
+```
+
+## jfg_assets.json
+
+The game reads all its data through one table of 71 "assets". Some assets are *sets*: a table asset that lists offsets
+into a data asset (levels, tracks, object lists, models, textures, object definitions). At game start, before the
+game's first instruction, the port lays the data out again with every pack's changes and points the game at it. The
+game never sees the difference.
+
+```json
+{
+  "assets":  [ { "asset": 34, "file": "assets/asset34.bin" } ],
+  "entries": [
+    { "table": 1,  "data": 0,  "entry": 291, "file": "assets/tex3d_291.bin" },
+    { "table": 30, "data": 31, "append": "level_gemini", "expect": 412, "file": "assets/level_gemini.bin",
+      "fixups": [ { "at": 84, "type": "s16", "ref": "objlist_gemini" } ] },
+    { "table": 46, "data": 47, "append": "objdef_fire_ant", "copyOf": 120,
+      "set": [ { "at": 0, "hex": "3f800000" } ] }
+  ],
+  "patches": [
+    { "table": 28, "data": 29, "entry": 424, "objlist": [
+        { "op": "set", "index": 12, "id": 120, "at": 4, "hex": "00960000ff6a" },
+        { "op": "delete", "index": 40, "id": 233 },
+        { "op": "append", "hex": "00a9000e..." } ] }
+  ],
+  "objtypes": [ { "append": "objtype_fire_ant", "def": "objdef_fire_ant", "like": 120 } ],
+  "animRows": [ { "model": "model_fire_ant", "from": 904 } ]
+}
+```
+
+### Replacing
+
+- `"assets"` replaces a whole asset.
+- `"entries"` with `"entry": N` replaces one entry of a set; `"table"` and `"data"` name the two assets. The 3D
+  textures are table 1 over data 0, the 2D textures table 3 over data 2. `"packed": true` marks a packed model or
+  track.
+- When two packs replace the same asset or entry, the one higher in the Mods list wins (logged).
+
+### Appending and the content linker
+
+- `"append": "name"` adds a new entry after the set's last one. The port numbers it at start-up: the number the pack
+  was made for (`"expect"`) if it's free, else the lowest free one.
+- Numbers are kept between starts in `bin/mod_ids.json` by `mod:name`, so a save that names a pack's level still
+  finds it as other packs come and go. Numbers of packs that aren't loaded stay reserved.
+- `"fixups"` write numbers the pack can't know into its bytes once they're given out: `at`, `type`, `ref`, `add`.
+  Types `u8 u16 s16 u32`, and `lohi` for an exit's target level. `ref` is one of the pack's own names or
+  `"othermod:name"`.
+- `jfg_mods.log` says which number each name got.
+
+### Copies of the player's own data
+
+`"copyOf": N` in place of `"file"` builds the entry from entry N of the same set in the player's own game, with
+`"set"` byte edits and fixups on top. A reskinned enemy needs only its new textures this way: its model and
+definition are copies.
+
+### Patches
+
+`"patches"` change an entry instead of replacing it, so several packs can change one stock level: `"set"` writes
+bytes at an offset; `"objlist"` sets inside, deletes or appends object-list entries. Each `set` and `delete` names the
+object id it expects at that index; if it doesn't match, the operation is skipped and logged (the pack was made for
+other data).
+
+### New object types
+
+`"objtypes"` add object ids for appended definitions; `"like"` is the stock id the squad code treats the new one as.
+`"animRows"` give an appended model a stock model's animations and joint slots.
+
+## jfg_world.json
+
+```json
+{ "format": 2,
+  "galaxies": [ { "id": "expanse", "name": "Zephyra Expanse", "home": "zephyra" } ],
+  "planets": [ {
+    "id": "glacia", "name": "Glacia", "galaxy": "expanse",
+    "levels": ["level_glacia", "level_glacia", "level_glacia"],
+    "disc": { "looks": 4, "x": 300, "y": 420, "radius": 14, "colour": [190, 225, 255] },
+    "unlock": { "completed": "zephyra" },
+    "routes": [ { "from": "planet:zephyra", "dir": "right", "back": "left" } ] } ] }
+```
+
+| Field | Meaning |
+|---|---|
+| `galaxy` | `"main"` (the game's), a galaxy of this pack, or `"othermod:galaxy"` |
+| `levels` | Entry level for Vela, Juno, Lupus: a level the pack appends (`"level_x"`) or `"stock:N"` |
+| `disc` | `looks`: the stock disc (0–10) whose textures it wears; position, radius, top colour |
+| `unlock` | `"start"`, `"stock"` (with the stock point its route leaves; game's galaxy only), `"script"`, `{"entered": p}`, `{"completed": p}`. `{"entered": itself}` hides a planet until its level is first entered |
+| `routes` | `from`: a stock map point number (game's galaxy) or `"planet:id"`; `dir` and `back`: stick directions (0 left, 1 right, 2 up, 3 down, or the names); optional `corners` |
+
+Opened, entered and completed planets are kept per save file in `saves/<save>_worlds.json`, written when the game
+saves. Format 1 (planets on the game's galaxy only) still loads.
+
+## jfg_music.json
+
+```json
+{ "tracks": { "zephyra_landing": "music/zephyra_landing.ogg" },
+  "levels": { "level_landing": "zephyra_landing", "stock:21": "zephyra_landing" } }
+```
+
+OGG Vorbis files that loop from their `LOOPSTART` / `LOOPLENGTH` comments (in samples), or whole. The game's tune is
+silenced while a pack track plays, and the track follows the music volume, pauses and fades.
+
+## jfg_scripts.json
+
+```json
+{ "scripts": ["scripts/_triggers.lua", "scripts/_weapons.lua", "scripts/main.lua"] }
+```
+
+See [Lua scripting](/api/lua).
+
+## Texture packs (rt64.json)
+
+An RT64 texture pack: `rt64.json` plus images named by the 16-digit hash RT64 gives each texture. As a mod (`.rtz` or
+inside an `.nrm`) or as a folder in `bin/texture_packs/`, chosen in Options › Textures or with F6. See
+[An HD texture pack](/tutorials/texture-pack).
+
+## Locales
+
+Translations are JSON files in `locales/`: menu strings (`menu.NNN`), subtitle lines (`subtitle.EE.L`) and hints
+(`hint.SSS.K`) by key. Missing keys fall back to English. Code mods can read the language with `jfg_get_language` and
+listen to `jfg_on_language_change`.

@@ -1,0 +1,87 @@
+---
+title: Getting started
+description: What you need to play and make mods, and where everything goes.
+---
+
+# Getting started
+
+What you need to play mods, to make them, and where everything goes.
+
+## Playing mods
+
+<Steps>
+### Install the port
+
+Install **Jet Force Gemini: Recompiled** and point it at your own US ROM.
+
+### Put the mod in the mods folder
+
+Copy the `.nrm` into the port's `mods` folder (next to the game's executable), or install it from the launcher's
+Mods page.
+
+### Turn it on and order it
+
+Enable it in the Mods list (launcher or in game). Higher in the list wins when two mods change the same thing (see
+[When mods meet](/api/mods-together)).
+
+### Play
+
+Data mods, scripts and planets apply when the game starts; texture packs apply at once.
+</Steps>
+
+<Callout type="info">
+**Where to look when something's off:** `bin/jfg_mods.log` records every pack the game loaded, what it replaced, the
+numbers its levels got, conflicts, and script errors.
+</Callout>
+
+## Making mods
+
+| You need | For |
+|---|---|
+| Your own **US ROM** of Jet Force Gemini | Studio reads it to show the game's levels, objects and models while you edit; the build reads the entries your pack copies. |
+| **JFG-Studio** (Python 3.12) | The level and pack editor. |
+| The **decomp** checkout | Studio uses its `tools/jfgformats` to read and write the game's formats. |
+| **Jet Force Gemini: Recompiled** | Studio's Play button installs your pack there and starts the game in your level. |
+| **Blender 3.5+** (optional) | Modelling level geometry; the [jfg64 add-on](/blender) helps. |
+| LLVM 18.1.8 and RecompModTool (optional) | Only for [C code mods](/api/c). |
+
+## Installing JFG-Studio
+
+```powershell
+git clone <forgejo>/VibinToast/JFG-Studio.git JFG-Studio
+cd JFG-Studio
+python -m venv .venv
+.venv\Scripts\python -m pip install -e .[dev]
+.venv\Scripts\python -m jfgstudio
+```
+
+On Windows, `studio.bat` does the last step for you. Then set the three paths in **File › Settings…** (or
+`jfgstudio settings set <key> <path>`):
+
+| Setting | Points at | Found automatically |
+|---|---|---|
+| `decomp` | The decomp checkout (with `tools/jfgformats`) | A `Decomp` folder next to JFG-Modding-Tools |
+| `port` | The Jet Force Gemini: Recompiled folder | No |
+| `rom` | Your US ROM (z64, v64 or n64 byte order) | `baserom.us.z64` or `jfg-us.z64` in the workspace |
+
+The first time Studio needs it, it builds a **catalog** from your ROM in your user data folder: the game's levels,
+object types, models and planet map. It stays on your machine. Without it the Scene still opens your own geometry,
+but the Prefabs, Models and Kinds windows say "No catalog".
+
+## Where things go
+
+| Path | What |
+|---|---|
+| `<port>/mods/` | Installed packs (`.nrm`) |
+| `<port>/bin/jfg_mods.log` | The mods log |
+| `<port>/bin/mod_ids.json` | Numbers the packs' levels and content got (keep it) |
+| `<port>/bin/saves/<save>_worlds.json` | Opened and completed pack planets, per save file |
+| `<port>/bin/texture_packs/` | Folder texture packs |
+| `<port>/bin/texture_dump/` | Dumped textures: the game's, and `texture_dump/<mod id>/` for each pack's own |
+| `my_planet.jfgproj/` | A Studio project ([format](/studio/project-format)) |
+| `my_planet.jfgproj/build/` | The pack Studio built |
+
+## Next
+
+Open the [example world](/studio/example-world) to see a finished pack, or start your own with
+[Your first planet](/studio/first-mod).

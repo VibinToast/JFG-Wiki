@@ -1,0 +1,77 @@
+---
+title: 'Tutorial: your first script'
+description: A Lua script that greets the player, reacts to a button and spawns a pickup.
+---
+
+# Your first script
+
+A Lua script that greets the player when a level starts, gives health on D-pad up, and opens a door once the hero
+reaches a spot. About fifteen minutes. Triggers in Studio can do the first one without code; scripts are for the
+rest.
+
+<Steps>
+### Make the script
+
+In Studio, open the **Scripts** window and press **New script**. It makes `scripts/script1.lua` with a starting point.
+Every `.lua` in `scripts/` goes into the pack.
+
+### Greet the player
+
+```lua filename="scripts/script1.lua"
+jfg.on("level", function(level)
+  jfg.log("entered level", level)
+  jfg.message("Welcome! D-pad up for health.", 4)
+end)
+```
+
+`jfg.on("level", fn)` runs once when a level's objects are set up. `jfg.log` writes to `bin/jfg_mods.log`;
+`jfg.message` shows a line on screen.
+
+### React to a button
+
+```lua
+jfg.on("tick", function(level, seconds)
+  if jfg.pressed("DUP") then
+    local x, y, z = jfg.player()
+    if x then
+      local ok, why = jfg.spawn(0xA9, x + 60, y + 10, z)   -- 0xA9: a health pickup
+      if not ok then jfg.log("spawn failed:", why) end
+    end
+  end
+end)
+```
+
+`tick` runs every game tick in a level. `jfg.pressed` is true on the tick the button went down. `jfg.spawn` creates
+an object as if it were in the level's list (at most 64 per level).
+
+### Open a door from a spot
+
+```lua
+local opened = false
+jfg.on("level", function() opened = false end)
+
+jfg.on("tick", function(level)
+  if opened or level ~= jfg.level_id("level1") then return end
+  local x, y, z = jfg.player()
+  if x and math.abs(x - 500) < 100 and math.abs(z - 800) < 100 then
+    opened = true
+    jfg.unlock_door(1)
+    jfg.message("Something opened in the distance...", 4)
+  end
+end)
+```
+
+`level1` is the name of a level in your project; `jfg.level_id` turns it into the number the port gave it this run.
+Door id 1 is the **doorId** field of a door in that level.
+
+### Save and play
+
+**Save script**, then **Play**. If something doesn't happen, look in `bin/jfg_mods.log`: errors name the script and
+line, and a handler that fails is switched off (the game keeps running).
+</Steps>
+
+## Where to go from here
+
+- Every helper: [Lua scripting](/api/lua).
+- Don't spawn things the game remembers (squadrons, crates that stay opened): spawned objects aren't saved.
+- Planets from Lua: `jfg.complete_planet("my_planet")` at a world's end opens the planets that come after it.

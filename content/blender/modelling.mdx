@@ -1,0 +1,82 @@
+---
+title: Modelling a level
+description: What to model in Blender for a Jet Force Gemini level, how to mark water, lava and pits, and how to export.
+---
+
+# Modelling a level
+
+The geometry of a level: what to model, how to light it, how to mark water, lava and pits, and how to export. Studio
+checks every file with the game's own track importer, so these rules are the game's.
+
+## Set up the scene
+
+- **Y is up**, as in Blender's glTF export (keep **+Y Up** on).
+- **One Blender unit is one game unit.** For a sense of size: a step between platforms of 25 units is easy to climb, a
+  door is about 144 high, the sample field is 2000 × 2000. Every position must stay within -32768…32767.
+- **Collision is the drawn triangles.** Model the floor the player walks on as real faces. There's no separate
+  collision mesh unless you make one (a `collider` surface).
+- Faces are **counter-clockwise seen from their front** (Blender's normal direction). Turn on Backface Culling in the
+  viewport to see which way faces point.
+
+<Callout type="warning">
+**Ramps and steps:** the hero can't climb a lip. Start ramps a little below the ground they rise from, and keep raised
+floors (a bridge deck) reachable by a ramp rather than a step up. Juno walks under a deck she can't step onto and
+falls.
+</Callout>
+
+## Light it with vertex colours
+
+The game's levels are lit by **vertex colours**: the baked light is the main look. Paint or bake into a colour
+attribute (byte colour, face corner or point). It's exported as `COLOR_0` and multiplied with the texture: white is
+"as the texture", darker is shadow. No vertex colours means full bright. The add-on's
+[Bake vertex light](/blender#vertex-light) does this for you.
+
+## Textures and materials
+
+- One image per material, as **PNG**. Small is right for an N64 game: 16×16 to 64×64. Studio cuts larger ones to
+  sizes that fit the console's texture memory.
+- UVs may repeat past 0…1 (tiling).
+- **New images are scarce**: each becomes a new 3D texture, and the game's table has room for about three. Reuse
+  images across materials (lava can reuse a stone image under red vertex colours). Studio's import check counts them.
+- **Special surfaces come from words in the material name** (anywhere, separated by `_`, `-`, a space or a dot):
+
+| Word | In the game |
+|---|---|
+| `water` | A water surface (see-through): the hero swims below its height. A flat face at the water's height, with alpha in the texture |
+| `lava` or `damage` | A damage floor: pushes the hero and hurts |
+| `kill` | A kill plane: a pit floor that kills, below a drop |
+| `collider` | Invisible but solid: walls that block without being drawn |
+| `nocollide` | Drawn but not solid: grass tufts, decoration |
+
+Examples: `rock_lava`, `pit_kill`, `glass_collider`, `pond_water`.
+
+Advanced: the custom properties `batchFlags`, `pass` (`opaque` / `translucent`) and `triangleFlags` on a material set
+the flags directly. Turn on **Custom Properties** in the export to keep them.
+
+## Export
+
+**File › Export › glTF 2.0** (or the add-on's **Export for JFG-Studio**):
+
+- **Format**: glTF Binary (`.glb`).
+- **Include**: Selected or Visible Objects (only the level), **Custom Properties** on.
+- **Transform**: **+Y Up** on.
+- **Mesh**: **Apply Modifiers** on, UVs on; vertex colours: the active one.
+- **Materials**: Export; images Automatic (PNG).
+- No animation, no armature: a level is static geometry.
+
+## Checklist before Play
+
+- The level has a floor under the start point (Studio places objects on the floor it finds).
+- Pits have a `kill` floor, or the hero falls forever.
+- As few new images as you can.
+- Studio's import check has no errors, and **Validate** shows none either.
+
+## When the check complains
+
+| Message | Fix in Blender |
+|---|---|
+| A vertex out of range | Move the level closer to the origin, or make it smaller |
+| A non-triangle primitive | Remove loose edges and points (export meshes only) |
+| Two materials give one texture different images | Give each image its own material |
+| Doesn't fit the track buffer | Fewer triangles, or split the level in two |
+| More than 127 segments | Studio splits big meshes for you; a level this large needs splitting into two levels |

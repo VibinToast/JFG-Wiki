@@ -1,0 +1,163 @@
+---
+title: Lua scripting
+description: The Lua 5.4 scripting API of Jet Force Gemini Recompiled packs, its events and every jfg helper.
+---
+
+# Lua scripting
+
+Packs can carry Lua 5.4 scripts. Each pack gets its own sandboxed Lua state, reacts to the `level` and `tick` events,
+and calls the `jfg.*` helpers below. <Status s="built" />
+
+## Adding scripts to a pack
+
+A pack lists its scripts in `jfg_scripts.json` at the top of the `.nrm`:
+
+```json
+{ "scripts": ["scripts/main.lua", "scripts/_triggers.lua"] }
+```
+
+Studio writes this for you. Every `.lua` in a project's `scripts/` folder goes in, plus `_triggers.lua` (from the
+Triggers window) and `_weapons.lua` (from the Weapons window). Edit scripts in Studio's
+[Scripts window](/studio/windows#scripts) or any editor.
+
+## The sandbox
+
+- Libraries: `base`, `string`, `table`, `math`, `utf8`, `coroutine`. No `io`, `os` or `package`; `load`, `loadfile`,
+  `dofile` and `require` are removed.
+- `print(...)` writes to `bin/jfg_mods.log`, like `jfg.log`.
+- An error in a handler, or a handler that runs more than 2,000,000 Lua instructions in one call, is logged and that
+  handler is switched off. The game keeps running.
+- Scripts run on the game thread, between the game's own ticks.
+
+## Events
+
+| Event | Arguments | When |
+|---|---|---|
+| `jfg.on("level", fn)` | `level` | The first tick in a level, once its objects are set up |
+| `jfg.on("tick", fn)` | `level, seconds` | Every game tick in a level; `seconds` since it started |
+
+```lua
+jfg.on("level", function(level)
+  if level == jfg.level_id("level_landing") then
+    jfg.message("Welcome to Zephyra Landing", 4)
+  end
+end)
+
+jfg.on("tick", function(level, seconds)
+  if jfg.pressed("L") then jfg.log("L at", seconds) end
+end)
+```
+
+## Helpers
+
+### Levels and the player
+
+| Call | Returns or does |
+|---|---|
+| `jfg.level()` | The current level number |
+| `jfg.level_id(name)` | A level's number: `"stock:21"` gives 21; `"level_x"` (this pack's) or `"mod:level_x"` (another pack's) gives the number it got this start; nil if not loaded |
+| `jfg.player()` | `x, y, z` of the first player, or nil |
+| `jfg.warp(level, start_point)` | Changes level, as the port's warp does; `start_point` defaults to 0 |
+
+### Input
+
+| Call | Returns |
+|---|---|
+| `jfg.pressed(name)` | true if the button was pressed this tick |
+| `jfg.held(name)` | true while the button is down |
+
+Button names are the N64's, whatever the player's controls map to them: `A B Z START DUP DDOWN DLEFT DRIGHT L R CUP
+CDOWN CLEFT CRIGHT`.
+
+### Doors, flags, fog and objects
+
+| Call | Returns or does |
+|---|---|
+| `jfg.flag(n)`, `jfg.set_flag(n, on)` | Read or set one of the game's saved flags (opened chests, collected items, story steps) |
+| `jfg.unlock_door(id)` | Unlocks the doors with that door id, as a squadron's death does |
+| `jfg.door_locked(id)` | true while a door with that id is locked, false once it's open to the player, nil if the level has none |
+| `jfg.fog(r, g, b, near, far [, ticks])` | Fades the level's fog to that colour and range over `ticks` (default 60); near and far in the game's depth units (900–1023) |
+| `jfg.spawn(id, x, y, z [, bytes])` | Creates an object as if it were in the level's list; `bytes` are the type's parameters from entry offset 0x0A. Returns true, or nil and a reason. At most 64 per level, gone when the level changes |
+
+<Callout type="warning">
+**What to spawn:** spawned objects aren't saved. Don't spawn types the game remembers (squadrons, crates that stay
+opened), and put enemies in squads in the level instead. Pickups, lights, glows and props are fine.
+</Callout>
+
+### Screen and music
+
+| Call | Does |
+|---|---|
+| `jfg.message(text [, seconds])` | Shows a line on screen (default 3 s); also logged |
+| `jfg.music(name)` | Plays one of this pack's OGG tracks (a name from its `jfg_music.json`) in this level |
+| `jfg.music_stop()` | Stops it; the level's own music comes back |
+| `jfg.log(...)`, `print(...)` | A line in `bin/jfg_mods.log`, starting with the pack's id |
+
+### Weapons
+
+| Call | Does |
+|---|---|
+| `jfg.weapon(n, fields)` | The pack's values for weapon slot `n` (0–14): `damage, delay, throw_delay, lifetime, spread_x, spread_y, speed`. See [Weapons](/api/weapons) |
+| `jfg.weapon_stats(n)` | A table of the same fields, as in play now |
+
+### Planets and galaxies
+
+Names without `mod:` are the script's own pack's.
+
+| Call | Returns or does |
+|---|---|
+| `jfg.unlock_planet(id)` | Opens a planet (for `"unlock": "script"` planets), for the save file in play |
+| `jfg.complete_planet(id)` | Marks a planet completed; planets that open after it show on the map |
+| `jfg.planet(id)` | `open, entered, completed` (three booleans); an error if there's no such planet |
+| `jfg.galaxy()` | The galaxy the map shows (`"main"` or `"mod:galaxy"`), nil while the map is closed |
+| `jfg.show_galaxy(id)` | The next time the map opens, it opens on this galaxy |
+
+## Examples
+
+### A message when a door opens
+
+```lua
+local told = false
+jfg.on("level", function() told = false end)
+jfg.on("tick", function()
+  if not told and jfg.door_locked(1) == false then
+    told = true
+    jfg.message("The gate is open!", 4)
+    jfg.music("victory")
+  end
+end)
+```
+
+### Health next to the hero on D-pad up
+
+```lua
+jfg.on("tick", function()
+  if jfg.pressed("DUP") then
+    local x, y, z = jfg.player()
+    if x then
+      local ok, why = jfg.spawn(0xA9, x + 60, y + 10, z)
+      if not ok then jfg.log("spawn failed:", why) end
+    end
+  end
+end)
+```
+
+### Finish a world at a spot
+
+```lua
+jfg.on("tick", function(level)
+  if level ~= jfg.level_id("level_arena") then return end
+  local x, y, z = jfg.player()
+  local _, _, done = jfg.planet("zephyra")
+  if x and not done and math.abs(x) < 150 and z > 1800 then
+    jfg.complete_planet("zephyra")
+    jfg.message("Zephyra is free. Glacia appears on the map.", 5)
+  end
+end)
+```
+
+## Planned
+
+- Hot reload of scripts without restarting <Status s="planned" />
+- Object handles (find, move, hurt objects) and Lua object kinds with their own behaviour <Status s="planned" />
+- The weapon, projectile and map events of the C API as Lua events <Status s="planned" />

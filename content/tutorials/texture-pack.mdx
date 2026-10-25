@@ -1,0 +1,48 @@
+---
+title: 'Tutorial: an HD texture pack'
+description: Dump the game's textures, upscale or repaint them, and play them as a texture pack.
+---
+
+# An HD texture pack
+
+Dump the textures the game draws, upscale or repaint them, and load them back as a pack. Packs replace textures at
+draw time, at any resolution, and can be switched while playing.
+
+<Steps>
+### Dump the textures
+
+In the game, open **F9 › Textures** and turn on **Dump textures**. Play through the areas you want: every texture the
+game draws is saved once as a PNG named by its hash in `bin/texture_dump/`.
+
+- **One folder per level** puts each level's textures in its own folder (`texture_dump/414 Zephyra Landing/`).
+- Textures the game redraws on most frames (effects that change constantly) go to `_dynamic/`: a replacement could
+  never match them, so you can skip that folder.
+- A mod's own textures go to `texture_dump/<mod id>/`, each with its own `_dynamic`, so your pack of the game's
+  textures never ships a mod's by accident.
+
+### Upscale or repaint
+
+Run the PNGs through an upscaler, or paint over them. Keep each file's name: the 16-digit hash at the start is how the
+game finds it (suffixes an upscaler adds after the hash are fine).
+
+### Make it a pack
+
+Put the images in a folder under `bin/texture_packs/<your pack>/`. The port writes the `rt64.json` that lists them
+the first time you pick the folder.
+
+### Use it
+
+**Options › Textures**, or <kbd>F6</kbd> to cycle packs while playing.
+</Steps>
+
+## Sharing a pack
+
+- As a folder or an `.rtz` (a zip with `rt64.json` at its root) for `bin/texture_packs/`, or inside a mod's `.nrm` so
+  it shows in the Mods list.
+- Higher in the Mods list wins between two packs; the pack picked in Options beats every pack in the Mods list.
+- A data mod that replaces a texture's pixels changes its hash, so a pack made for the original no longer matches it.
+
+<Callout type="error">
+Upscaled textures are still made from the game's art. Share them only the way your community shares HD packs, and
+never include the ROM or other game files.
+</Callout>

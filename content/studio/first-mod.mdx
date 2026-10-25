@@ -1,0 +1,112 @@
+---
+title: Your first planet
+description: From an empty project to playing your own level in the game, step by step in JFG-Studio.
+---
+
+# Your first planet
+
+This walk-through makes a small pack from nothing: a level on your own geometry, a start point, an ant squad that
+keeps a door shut, an exit home, a message when you arrive, and a planet on the map that leads to it. It takes about
+half an hour. You need [Studio set up](/getting-started#installing-jfg-studio) with your ROM, the decomp and the port.
+
+<Callout type="info">
+Don't have a level model yet? Open the [example world](/studio/example-world) first and copy one of its `.glb`
+files from `geometry/`, or follow [Modelling a level](/blender/modelling) to make a simple floor in Blender.
+</Callout>
+
+<Steps>
+### Create the project
+
+**File › New project…** opens the dialog:
+
+<Figure src="/img/studio-new-project.png" alt="The New project dialog with Name, Mod id, Folder and Geometry fields" caption="Name, mod id, where to create it, and (optional) your first level's .glb." width={560} />
+
+- **Name**: what players see in the Mods list, e.g. `My Planet`.
+- **Mod id**: lower case and unique to you, e.g. `yourname.my_planet`. It names the pack and keeps your content apart
+  from other people's, so don't reuse someone else's.
+- **Folder**: where to make it. Studio creates `my_planet.jfgproj` inside.
+- **Geometry**: your `.glb` from Blender. Studio copies it into the project, makes the first level on it, and puts
+  start point 0 in the middle, on the floor. Markers from the [Blender add-on](/blender) become objects.
+
+Press **Create**. The level opens in the Scene and the import check runs: its report is in the **Console**
+(segments, triangles, new images, whether it fits the game's track buffer, and the special surfaces it found).
+
+### Look around
+
+Hold the right mouse button and use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to fly, <kbd>Q</kbd>/<kbd>E</kbd> to go
+down and up; the mouse wheel changes the speed. <kbd>F</kbd> frames the selection, or the whole level from above.
+
+<Figure src="/img/studio-scene.png" alt="The Scene: a green field with stone walls and ramps, markers and labels over the objects" caption="The Scene draws your geometry with its textures, vertex light and fog; objects are markers or the game's models." />
+
+### Set up the level
+
+Open the **Level** window (right side). Give the level a **Name** (31 characters at most), pick its **Music** (any
+stock tune, or [your own OGG](/tutorials/music)), a **Sky** and **Fog**.
+
+<Figure src="/img/studio-level.png" alt="The Level window: name, world, track, music and sound, sky and fog" caption="The Level window. Changes here can be undone like object edits." width={345} />
+
+### Add an ant squad that locks a door
+
+In **Prefabs** (bottom), open **Groups** and drag **Squad, region and locked door** into the Scene. Before you drop
+it, pick the **Squadron** (an enemy type and its count), a **Door**, and how many **Members**.
+
+<Figure src="/img/studio-prefabs.png" alt="The Prefabs window: search, In stock, Groups, Pack kinds and categories" caption="Prefabs: groups at the top, your pack's kinds, then every object type by category." />
+
+You get a squadron, its members, a square **navigation region** they keep to, and a door that stays shut until
+they're all dead. The Inspector shows each part's fields.
+
+<Callout type="warning">
+Every squadron needs a navigation region with at least three corners, or the game crashes when the level starts.
+The group makes one for you; the validator catches a missing one.
+</Callout>
+
+### Place pickups and move things
+
+Search Prefabs for `health` and drag a few in. Select an object (click it, or in the **Hierarchy**) and:
+
+- <kbd>W</kbd> moves it; with **Floor** on (toolbar) it drops onto the floor below. **Snap** moves in grid steps.
+- <kbd>E</kbd> turns objects that have a facing; <kbd>R</kbd> sizes those that have a size.
+- **Drop to floor** in the Inspector puts it on the floor, a little above it so it doesn't spawn inside a slope.
+
+<Figure src="/img/studio-inspector.png" alt="The Inspector for a squadron: name, position, Drop to floor, and its fields" caption="The Inspector: the selected object's name, position and fields. Dimmed values come from the stock entry." width={345} />
+
+### Add the exit home
+
+Drag **Groups › Exit and return start point** near the edge of the level. Select the exit, and in the Inspector's
+**Destination** pick **Leads to** (any of your levels or a stock level: Goldwood's Forest First is a good one) and
+the **Start point** to arrive at.
+
+### Say hello
+
+Open **Triggers**, press **New trigger**, and set **When** to `level start`. Its first action is a `message`: type
+your welcome. Press **Save triggers**.
+
+<Figure src="/img/studio-triggers.png" alt="The Triggers window with two triggers, their level, condition and actions" caption="Triggers: when something happens in a level, then actions. No code needed." width={345} />
+
+### Put it on the map
+
+Open **Planet** and press **New planet**. Give it a **Name**, then click empty map space to place its disc and a
+stock planet to draw the route from (only free stick directions are offered). Set **Entry level** for Juno, Vela and
+Lupus to your level. **Opens** decides when it shows: `with the stock point its route leaves` is the simplest.
+
+<Figure src="/img/studio-planet.png" alt="The Planet window: the map with planets and routes on the left, fields on the right" caption="The Planet window, here on a galaxy of the pack's own. See A galaxy of your own for that." />
+
+### Validate, save and play
+
+Press <kbd>Ctrl+S</kbd>, then **Validate**: the Console lists problems; click one to jump to the object. With no
+errors, pick a hero next to **Play** and press it. Studio builds the pack, installs it into the port, and starts the
+game in your level.
+
+<Figure src="/img/studio-console.png" alt="The Console with the Validate button and 0 errors, 0 warnings" caption="The Console: validator results and the build and play output." />
+</Steps>
+
+## Sharing it
+
+**Build › Build pack** writes `my_planet.jfgproj/build/<mod id>.nrm`. That file is your mod: players put it in their
+`mods` folder. It carries only your content; the game's parts are filled in from each player's own ROM.
+
+## Next
+
+- Look at how the [example world](/studio/example-world) does more: a galaxy, hidden planets, a reskinned enemy,
+  talkers and a finale.
+- [Tutorials](/tutorials/weapons) for single features.

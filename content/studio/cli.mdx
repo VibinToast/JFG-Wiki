@@ -1,0 +1,41 @@
+---
+title: Command line
+description: The jfgstudio command, its subcommands and options.
+---
+
+# Command line
+
+Everything the editor does to a project also works from a terminal: `jfgstudio` (or `python -m jfgstudio`). With no
+command it opens the editor.
+
+| Command | Options | Does |
+|---|---|---|
+| `jfgstudio gui [project]` | `--screenshot x.png` | The editor; with `--screenshot`, saves a picture of the window and quits |
+| `jfgstudio new <folder>` | `--id` (required), `--name` (required), `--author` | An empty project |
+| `jfgstudio validate <project>` | `--all` (also notes) | Prints problems; exits 1 on errors |
+| `jfgstudio build <project>` | `-o/--out`, `--rom` | Builds the pack (default `<project>/build/<id>.nrm`) |
+| `jfgstudio test <project>` | `--level`, `--start-point`, `--character vela/juno/lupus`, `--rom`, `--no-launch` | Builds, installs into the port's `mods`, starts the game in that level |
+| `jfgstudio catalog` | `--rom` | Rebuilds the local catalog from your ROM |
+| `jfgstudio settings` | | Shows the decomp, port and ROM paths and Studio's folders |
+| `jfgstudio settings set <key> <value>` | key: `decomp`, `port`, `rom` | Sets one (an empty value clears it) |
+
+On Windows, `studio.bat` runs the same commands from the Studio folder.
+
+## Examples
+
+```powershell
+# A new project
+jfgstudio new C:\Mods\my_planet.jfgproj --id yourname.my_planet --name "My Planet" --author you
+
+# Check and build it
+jfgstudio validate C:\Mods\my_planet.jfgproj
+jfgstudio build C:\Mods\my_planet.jfgproj
+
+# Play the example world from its second level, at the far end, as Vela
+studio.bat test samples\zephyra.jfgproj --level caverns --start-point 1 --character vela
+```
+
+<Callout type="info">
+`test` needs the `port` setting and a port new enough to start a level by name (it asks the game for its launch
+options first). It installs the pack as `<port>/mods/<mod id>.nrm` and runs the game with only that pack.
+</Callout>

@@ -1,0 +1,57 @@
+---
+title: When mods meet
+description: What happens when two Jet Force Gemini Recompiled mods change the same thing, and how the Mods list order decides.
+---
+
+# When mods meet
+
+Players install several packs at once. This page says what happens when two of them touch the same thing, and how
+the Mods list order decides.
+
+## Who wins
+
+| Kind | When two overlap |
+|---|---|
+| Texture packs | The one higher in the list. The pack picked in Options › Textures (F6) beats every pack in the list. |
+| Data replacements (`jfg_assets.json`) | The one higher in the list; logged in `jfg_mods.log` |
+| Data patches of one stock entry | All apply, top of the list first; an operation made for other data is skipped and logged |
+| Appended levels, models, textures | No clash: each gets its own number (below) |
+| Planets | No clash on a pack's own galaxy. On the game's galaxy, a route that takes a direction already used moves to a free one, or is left out; both are logged |
+| Weapons (`jfg.weapon`) | The last pack to set a field wins; the player's own Weapons tab beats every pack |
+| API events | Callbacks run top to bottom; the lowest has the final say on a value or `cancel` |
+| Hooks | All run (entry hooks top to bottom, return hooks bottom to top) |
+| Function replacements | No winner: the second mod doesn't load ("Conflicts with other mod") |
+
+## Numbers: levels and other new content
+
+Packs never hard-code the numbers of what they add. A level is named (`level_landing`) and the port numbers it at
+start-up:
+
+- it gets the number the pack was built for, or the lowest free one if another pack has that;
+- exits and other links to it are rewritten to the number it actually got;
+- numbers are kept in `bin/mod_ids.json`, so a level keeps its number between starts and a save made in it stays
+  valid;
+- numbers of a pack that's turned off stay reserved, so turning packs on and off doesn't shuffle the others.
+
+<Callout type="warning">
+**Keep `mod_ids.json`.** Deleting it hands out numbers fresh. With several packs installed a level can then get
+another number, and a save made inside a pack level may point at the wrong one.
+</Callout>
+
+## Names are per mod
+
+Planets and galaxies are stored as `<mod id>:<id>`, so two packs can both have a planet called `zephyra`. The one real
+clash is two packs with the **same mod id**: the loader keeps mods by id, so the second would be ignored or mixed up
+with the first. Pick an id nobody else will: `yourname.my_planet`.
+
+## Depending on another pack
+
+List it in `dependencies` (in Studio: the project's Dependencies). Then you can use its content by name: fixups to
+`othermod:level_x`, planets on `othermod:galaxy`, its exported C functions. Without the dependency installed, the game
+refuses your pack with "Missing dependency".
+
+## Texture dumps and mods
+
+When a player dumps textures for an upscaler, the game's own textures go to `texture_dump/` and each pack's own (the
+entries it adds, replaces or patches) to `texture_dump/<mod id>/`, each with its own `_dynamic`. A texture pack made
+from the game's dump never ships a mod's textures by accident.

@@ -1,0 +1,45 @@
+---
+title: 'Tutorial: change a stock level'
+description: Add objects to one of the game's own levels, such as a portal in Goldwood, without replacing it.
+---
+
+# Change a stock level
+
+Add a portal to Goldwood's first level that leads to your planet, without replacing the level. Your pack carries
+only the change, so it works with every player's copy and alongside other packs that change the same level.
+
+<Steps>
+### Start an edit of the level
+
+In the **Project** window press **Edit a stock level…**, search for the level (`Forest First` is level 21), and
+**Create**. Studio makes a level folder with `base: stock:level/21`.
+
+### Find your way around
+
+The level's own objects show in a dim blue in the Scene: you can see them, not select or change them. Fly to the
+spot you want; the new-game start point is a good landmark.
+
+### Add the portal
+
+From **Prefabs**, drag in an exit (**Players & exits**) and a glow (**Lights & effects**) so players can see it. Set
+the exit's **Leads to** to your level and its start point.
+
+### Optionally change the level's look
+
+The **Level** window's fields write over the stock header: fog, sky, music. Leave them alone to keep the level as it
+was.
+
+### Play
+
+**Play** starts the game in that level with your pack loaded; walk to the portal.
+</Steps>
+
+## What happens in the pack
+
+Studio writes your change as a **patch** of the level's object list, not a replacement: an append of your objects.
+Another pack can patch the same level and both apply. A patch that expects an object the player's data doesn't have
+is skipped and logged instead of breaking the level.
+
+<Callout type="info">
+The example world's `forest_portal` level is exactly this: a portal, a glow and a light added to Forest First.
+</Callout>

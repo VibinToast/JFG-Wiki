@@ -1,0 +1,75 @@
+---
+title: What can be modified
+description: The game area by area, what you can change today, with examples and the tool to use.
+---
+
+# What can be modified
+
+The game area by area: what you can change today, an example of each, and the tool to use. The full matrix with
+every call is on [API status](/api).
+
+<Legend />
+
+## Planets and the planet map
+
+- **Add a planet** to the game's galaxy, with a route from a stock planet. *Example:* a new world above Goldwood.
+  <Status s="built" /> Studio's Planet window.
+- **A galaxy of your own**: an empty map for your planets, switched with L and R. *Example:* the Zephyra Expanse.
+  <Status s="built" />
+- **Hidden planets** that appear when another is completed, or once you first find their level.
+  <Status s="built" /> [Tutorial](/tutorials/planet)
+
+## Levels
+
+- **New levels** from your own Blender geometry: floors, walls, water, lava, pits, invisible colliders.
+  <Status s="built" /> [Your first planet](/studio/first-mod)
+- **Change a stock level**: add objects to it, change its fog, sky or music, without replacing it. *Example:* a
+  portal in Goldwood to your planet. <Status s="built" /> [Tutorial](/tutorials/stock-level)
+- **Level look**: sky, clear colour, fog, field of view, weather, light slots, ambient loops. <Status s="built" />
+  Studio's Level window.
+- **Exits and start points** between your levels and the game's. <Status s="built" />
+- Moving platforms, jetpack pads, Galaxian flight paths <Status s="planned" />
+
+## Enemies, friends and objects
+
+- **Place any object the game has**: ant squads, Cyborgs, doors, keys, chests, crates, health, ammo, lights, glows,
+  sounds, fog and camera zones, switches. <Status s="built" /> Studio's Prefabs.
+- **Squads that lock doors** until they're dead, with navigation regions and patrol networks. <Status s="built" />
+- **New enemy looks**: a stock enemy with your textures and size, as its own type. *Example:* the Fire Ant.
+  <Status s="built" /> [Tutorial](/tutorials/reskin)
+- **Spawning** objects from a trigger or script. <Status s="built" />
+- New meshes for enemies <Status s="partial" /> (the data route works; there's no importer yet); enemies with their
+  own behaviour <Status s="planned" />
+
+## Weapons
+
+- **Tune the 15 weapons**: damage, fire rate, speed, range, spread, throw timing. *Example:* a pistol for thin air
+  that fires faster. <Status s="built" /> [Tutorial](/tutorials/weapons)
+- Bolt size, charge speed, mine limit: player-only for now <Status s="partial" />
+- **New weapons** with their own gun models and HUD icons <Status s="planned" />
+
+## Story, triggers and scripts
+
+- **Triggers without code**: when the level starts, an area is entered, a door opens, a flag is set, or the hero
+  talks to someone, then show messages, play music, fade fog, set flags, unlock doors, warp, spawn, or open and
+  complete planets. <Status s="built" />
+- **Talkers and notes**: lines that advance each time you talk. <Status s="built" />
+- **Lua scripts** for anything the triggers can't say. <Status s="built" /> [Tutorial](/tutorials/script)
+
+## Music and sound
+
+- **Your own music** per level, as OGG with loop points. <Status s="built" /> [Tutorial](/tutorials/music)
+- **Any stock tune and ambient loop** in your levels. <Status s="built" />
+- Replace or mute sound effects (C) <Status s="built" />; new sound effects <Status s="planned" />
+
+## Look and feel
+
+- **HD texture packs**. <Status s="built" /> [Tutorial](/tutorials/texture-pack)
+- **Blood, gore and the hit flash** (C events). <Status s="built" />
+- **Hide objects** as they draw (C). <Status s="built" />
+- **Translations** of menus, subtitles and hints. <Status s="built" />
+
+## Anything else
+
+A [C code mod](/api/c) can hook or replace any game function. That's the route for changes nothing above covers,
+and for [library mods](/api/c#library-mods) that other mods build on.

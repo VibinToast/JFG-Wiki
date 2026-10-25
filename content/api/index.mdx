@@ -1,0 +1,126 @@
+---
+title: 'API status: built, partial, planned'
+description: Everything a Jet Force Gemini Recompiled mod can change today, area by area, and what is still planned.
+---
+
+# API status
+
+Everything a mod can change today, area by area, and what's still on the way. API version 3.
+
+<Legend />
+
+## Ways to mod
+
+<Cards>
+  <Cards.Card title="Data files: jfg_assets.json, jfg_world.json, jfg_music.json" href="/api/files" arrow />
+  <Cards.Card title="Lua scripts: one sandboxed state per pack" href="/api/lua" arrow />
+  <Cards.Card title="C code mods: helpers, events and hooks" href="/api/c" arrow />
+  <Cards.Card title="Texture packs and translations" href="/tutorials/texture-pack" arrow />
+</Cards>
+
+JFG-Studio writes the data files and the Lua for you; you only touch them by hand for what Studio doesn't cover yet.
+
+## Weapons
+
+Details: [Weapons](/api/weapons).
+
+| Capability | How | Status |
+|---|---|---|
+| Damage | `jfg.weapon(n, {damage=})`, 0–255, any of the 15 stock weapons by slot | <Status s="built" /> |
+| Fire rate | `delay`: frames between shots (0–255) | <Status s="built" /> |
+| Projectile and throw speed | `speed` (0.1–2000) | <Status s="built" /> |
+| Projectile lifetime (range) | `lifetime` (1–255) | <Status s="built" /> |
+| Spread (accuracy) | `spread_x`, `spread_y` (0–8192; 65536 is a full turn) | <Status s="built" /> |
+| Throw timing | `throw_delay`: frames from press to release (1–127) | <Status s="built" /> |
+| Read a weapon's values | `jfg.weapon_stats(n)` | <Status s="built" /> |
+| Weapon values without code | Studio's Weapons window (`weapons.json`) | <Status s="built" /> |
+| Laser bolt size, plasma charge speed, mine limit, pistol rapid-fire heat | Only in the player's F9 Weapons tab | <Status s="partial" /> |
+| Gun and projectile models and textures | Replace their model or texture entries; changes them everywhere, not per weapon | <Status s="partial" /> |
+| New weapons in extra slots | `jfg_weapon_register`: virtual slots 16 and up that borrow a stock weapon's firing, reticle and HUD | <Status s="planned" /> |
+| Gun model per hero, HUD icon | Needs the gun-model choice and the HUD strip draw named in the decomp | <Status s="planned" /> |
+| Give, take and ammo | `jfg_weapon_give / has / get_ammo / set_ammo / current` | <Status s="planned" /> |
+| Weapon events | `jfg_on_weapon_fire`, `jfg_on_weapon_select`, `jfg_on_projectile_hit` | <Status s="planned" /> |
+
+## Levels and game data
+
+| Capability | How | Status |
+|---|---|---|
+| Replace game data | A whole asset, or one entry of a set: level header, track, model, texture, object list | <Status s="built" /> |
+| Add levels, tracks, models, textures, object definitions | `"append"`: numbered at start-up, kept in `bin/mod_ids.json` so saves stay valid | <Status s="built" /> |
+| Link entries by name | `"fixups"` write the real numbers once known, even another mod's | <Status s="built" /> |
+| Edit a stock level without replacing it | `"patches"`: byte edits, and object-list set, delete and append; several mods can patch one level | <Status s="built" /> |
+| Build from the player's own data | `"copyOf"` plus byte edits, so a pack carries no game data | <Status s="built" /> |
+| Level look: fog, sky, clear colour, music, ambient loops | The level header (Studio's Level window); `jfg.fog()` at run time | <Status s="built" /> |
+| Doors and game flags | `jfg.unlock_door`, `jfg.door_locked`, `jfg.flag`, `jfg.set_flag` | <Status s="built" /> |
+| Warp to a level | `jfg.warp(level, start_point)` | <Status s="built" /> |
+| Water, lava, pits, invisible walls | Surfaces from Blender material names; Studio's Water tool | <Status s="built" /> |
+| Moving platforms, jetpack pads, Galaxian flight paths | Wait on the decomp naming their data | <Status s="planned" /> |
+
+## Enemies and objects
+
+| Capability | How | Status |
+|---|---|---|
+| Place any stock object | Object lists (appended or patched) | <Status s="built" /> |
+| New enemy types (reskins) | Studio kinds: a stock enemy with new textures and size, its own object id | <Status s="built" /> |
+| Borrow animations for a new model | `"animRows"` | <Status s="built" /> |
+| Squad size | The squadron's Size field, shared by its members | <Status s="built" /> |
+| Spawn at run time | `jfg.spawn(id, x, y, z, {params})`, 64 per level | <Status s="built" /> |
+| Hide or change how an object draws | C event `jfg_on_object_draw` | <Status s="built" /> |
+| New models (meshes) | Appended model entries work; Studio has no model importer yet | <Status s="partial" /> |
+| Objects with their own behaviour | Lua object kinds and handles; bosses and talkers as kinds | <Status s="planned" /> |
+
+## Planets and galaxies
+
+| Capability | How | Status |
+|---|---|---|
+| New planets on the map | `jfg_world.json`: on the game's galaxy or the pack's own (L and R switch) | <Status s="built" /> |
+| Routes | From a stock map point or another planet; clashes between mods move to a free direction | <Status s="built" /> |
+| Unlock rules | start, stock, script, entered, completed, discovered; kept per save file | <Status s="built" /> |
+| Open and complete from code | Lua `jfg.unlock_planet` and friends; C `jfg_world_*`, `jfg_galaxy_*` | <Status s="built" /> |
+| Map events | `jfg_on_map_open`, `jfg_on_galaxy_change`, `jfg_on_planet_select` | <Status s="built" /> |
+| Fly your ship between planets | A design scenario; not scheduled | <Status s="planned" /> |
+
+## Scripts, input and screen
+
+| Capability | How | Status |
+|---|---|---|
+| Run code each level and tick | `jfg.on("level", fn)`, `jfg.on("tick", fn)` | <Status s="built" /> |
+| Triggers without code | Studio's Triggers window | <Status s="built" /> |
+| Player position, buttons | `jfg.player()`, `jfg.pressed(name)`, `jfg.held(name)` | <Status s="built" /> |
+| On-screen messages and talkers | `jfg.message`; Studio's talk trigger and lines action | <Status s="built" /> |
+| Logging | `jfg.log`, `print`; C `recomp_printf` | <Status s="built" /> |
+| Hot reload of scripts | Reload Lua without restarting | <Status s="planned" /> |
+| Pause screen | Hooks for the pause menu; waiting on the decomp | <Status s="planned" /> |
+
+## Music, sound and effects
+
+| Capability | How | Status |
+|---|---|---|
+| Custom level music | `jfg_music.json`: OGG per level with loop points | <Status s="built" /> |
+| Switch music from a script | `jfg.music(name)`, `jfg.music_stop()` | <Status s="built" /> |
+| Replace or mute a sound effect | `jfg_on_sound_play` | <Status s="built" /> |
+| New sound effects | Only the game's own sounds can be played | <Status s="planned" /> |
+| Blood and gore | `jfg_on_blood_spurt`, `jfg_on_blood_hit`, `jfg_on_severed_limb_tick` | <Status s="built" /> |
+| Screen hit flash | `jfg_on_screen_flash` | <Status s="built" /> |
+
+## Game loop and players (C)
+
+| Capability | How | Status |
+|---|---|---|
+| Every tick, frame-rate safe | `jfg_on_game_tick(frames)`, `jfg_get_tick_scale()` | <Status s="built" /> |
+| Level changes | `jfg_on_level_change`, `jfg_get_level` | <Status s="built" /> |
+| Boss fights and Floyd | `jfg_on_boss_fight_control`, `jfg_on_sidekick_tick` | <Status s="built" /> |
+| Change any game function | `RECOMP_HOOK`, `RECOMP_PATCH` (a few overlay functions can't be hooked) | <Status s="built" /> |
+| Share code between mods | Library mods: exports, events, dependencies | <Status s="built" /> |
+| Draw from a mod | Display lists, vertices and textures in the mod's own memory | <Status s="built" /> |
+| Co-op in the story | A design scenario; not scheduled | <Status s="planned" /> |
+
+## Textures and language
+
+| Capability | How | Status |
+|---|---|---|
+| HD texture packs | RT64 packs as mods or folders; Options or F6 | <Status s="built" /> |
+| Texture dumping for upscalers | Game textures in `texture_dump/`, each mod's own in `texture_dump/<mod id>/` | <Status s="built" /> |
+| New textures in a pack | Appended or replaced texture entries | <Status s="built" /> |
+| Studio reusing stock textures | An image identical to a game texture could use the game's own; the importer can, Studio leaves it off | <Status s="partial" /> |
+| Translations | Locale files: menus, subtitles, hints; `jfg_get_language`, `jfg_on_language_change` | <Status s="built" /> |

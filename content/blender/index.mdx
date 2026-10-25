@@ -1,0 +1,130 @@
+---
+title: The jfg64 Blender add-on
+description: Surfaces, vertex light, budgets, markers and export for JFG-Studio levels, in Blender.
+---
+
+# The jfg64 Blender add-on
+
+**jfg64** is a Blender add-on (Blender 3.5 or newer) for making level geometry for JFG-Studio. It makes the common
+steps quick and shows the game's budgets while you model. It writes nothing Studio can't also read from a plain glTF
+export, so it's optional: [Modelling a level](/blender/modelling) covers doing it all by hand.
+
+## Install
+
+<Steps>
+### Zip the add-on
+
+The add-on is the `jfg64` folder in `JFG-Modding-Tools/jfg64-blender/`. Zip that folder so the zip holds
+`jfg64/__init__.py`.
+
+### Install it in Blender
+
+**Edit › Preferences › Add-ons › Install…**, pick the zip, and tick **jfg64: Jet Force Gemini levels**.
+
+### Open the panel
+
+In the 3D View press <kbd>N</kbd> for the sidebar and pick the **JFG** tab.
+</Steps>
+
+## The panel
+
+<div className="jfg-panel" role="img" aria-label="The Jet Force Gemini panel in Blender's sidebar">
+  <div className="box">
+    <div className="lbl">Surface of the active material</div>
+    <div>rock_lava: lava</div>
+    <div className="row"><span className="btn">Solid</span><span className="btn">Water</span><span className="btn">Lava</span><span className="btn">Kill</span><span className="btn">Collider</span><span className="btn">Nocollide</span></div>
+  </div>
+  <div className="box">
+    <div className="lbl">Vertex light</div>
+    <div className="field"><span>Sun</span><span>■</span></div>
+    <div className="field"><span>Ambient</span><span>■</span></div>
+    <div className="field"><span>Sun direction</span><span>-0.4, 0.3, -1.0</span></div>
+    <div className="lbl">(a Sun lamp in the scene sets the direction)</div>
+    <span className="btn">Bake vertex light</span>
+  </div>
+  <div className="box">
+    <div className="lbl">Budgets (visible objects)</div>
+    <div>1,840 triangles</div>
+    <div>2 images (about 3 new fit)</div>
+    <div>farthest vertex 2050 (limit 32767)</div>
+    <div>surfaces: kill, lava, solid, water</div>
+  </div>
+  <div className="box">
+    <div className="lbl">Markers (Studio places these)</div>
+    <div className="row two"><span className="btn">Startpoint</span><span className="btn">Exit</span><span className="btn">Health</span><span className="btn">Regionpoint</span><span className="btn">Other</span></div>
+    <div className="field"><span>Type</span><span>stock:objtype/0xD</span></div>
+    <div className="field"><span>Fields</span><span>{'{"startPoint": 0}'}</span></div>
+  </div>
+  <span className="btn wide">Export for JFG-Studio</span>
+</div>
+
+A diagram of the panel's layout (the numbers are an example scene).
+
+### Surface
+
+Makes the active object's active material one kind of surface. It puts the surface's word in the material's name
+and sets the custom properties the game's track importer reads:
+
+| Button | The game | Material |
+|---|---|---|
+| Solid | Ground and walls | Opaque |
+| Water | A water surface: the hero swims below it. Make it a flat face at the water's height, with alpha in the texture | See-through |
+| Lava | A damage floor: pushes the hero and hurts | Opaque |
+| Kill | A pit floor that kills, below a drop | Opaque |
+| Collider | Invisible but solid: walls that block without being drawn | Opaque |
+| Nocollide | Drawn but not solid: grass tufts, decoration | Opaque |
+
+The line above the buttons shows the active material and the surface it is now.
+
+### Vertex light
+
+The game lights its levels with **vertex colours**. **Bake vertex light** writes a sun and an ambient colour into the
+selected meshes' vertex colours (a `Col` byte colour attribute on face corners): each face gets ambient plus sun ×
+how much it faces the sun. A **Sun lamp** in the scene sets the direction; without one, **Sun direction** does.
+Bake again after you change the model.
+
+### Budgets
+
+Counted live over the visible objects:
+
+- **triangles** in the level;
+- **images**: each new image becomes a new 3D texture, and the game's table has room for about three. The count
+  turns red past that. Reuse images between materials;
+- **farthest vertex** from the origin: the game takes up to 32767 units. Red past that;
+- the **surfaces** in use.
+
+### Markers
+
+Empties at the 3D cursor that Studio turns into objects when it makes the first level from the file:
+
+| Marker | Becomes | Default fields |
+|---|---|---|
+| Startpoint | A start point; its arrow is the facing | `player 0, startPoint 0` |
+| Exit | An exit (set where it leads in Studio) | `radius 60` |
+| Health | A health pickup | `amount 0` |
+| Regionpoint | A navigation region corner | `region 1, corner 0` |
+| Other | Any type: set **Type** to `stock:objtype/0x…` | |
+
+With a marker selected, **Type** and **Fields** (JSON) are editable in the panel, e.g. `{"startPoint": 1}` for a second
+start point.
+
+<Callout type="info">
+Markers are read when Studio makes a level from a new file (**File › New project** with the `.glb`, or the first
+**Import geometry** into an empty project). Re-exporting later updates the geometry, not the objects: place further
+objects in Studio.
+</Callout>
+
+### Export for JFG-Studio
+
+Writes a `.glb` of the visible objects with the settings Studio needs: +Y up, custom properties, modifiers applied,
+vertex colours, no animation, cameras or lights. It refuses to export if a vertex is past 32767 and reports the
+triangle and image counts.
+
+## Into Studio
+
+- **First time:** **File › New project…** with the `.glb` as Geometry, or **File › Import geometry…** into a
+  project.
+- **After changes:** export over the file in the project's `geometry/` folder (or import it again). The Scene reloads
+  it.
+- **Read the check** in Studio's Console: segments, batches, triangles, textures and new images, whether it fits the
+  game's track buffer, and which special surfaces it found.

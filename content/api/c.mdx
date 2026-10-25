@@ -1,0 +1,123 @@
+---
+title: C mod API
+description: Code mods for Jet Force Gemini Recompiled - building them, hooks and patches, and the jfg_api.h helpers and events.
+---
+
+# C mod API (`jfg_api.h`)
+
+Code mods are C compiled for the N64's CPU and packed into an `.nrm`. They can hook or replace any game function, and
+they get the port's own helpers and events through `mod_api/jfg_api.h`. API version 3.
+
+## Building a code mod
+
+- C, compiled with clang for MIPS (`-target mips -mips2 -mabi=32`) and linked with `ld.lld` and the template's
+  `mod.ld`. On Windows use LLVM 18.1.8 (19.1.0 miscompiles MIPS).
+- Packed by N64Recomp's **RecompModTool**: `RecompModTool mod.toml build`. `mod.toml` has a `[manifest]` (id,
+  version, display name, authors, `game_id = "jet-force-gemini"`, `minimum_recomp_version`, dependencies) and
+  `[inputs]` (the ELF, the symbol files, `additional_files`).
+- `additional_files` stores each file by its name only (folders are dropped), so names must be unique. To keep
+  folders, add them to the finished `.nrm` with a zip tool: an `.nrm` is a zip.
+- Game variables you use must be declared `extern` with the decomp's exact type: a wider type reads and writes its
+  neighbours.
+
+A step-by-step build is in [A first code mod](/tutorials/c-mod).
+
+## Ways to change the game, best first
+
+1. **The JFG API**: events with values you can change or cancel, and helpers. The port's own features use the same
+   events and run first; mods follow in Mods-list order.
+2. **Hooks**: `RECOMP_HOOK("func")` runs before a function, `RECOMP_HOOK_RETURN("func")` after. Any number of mods
+   can hook one function. Hooks observe: they can't change arguments or the return value.
+3. **A library mod** someone else made, for anything shared.
+4. **Replacing a function**: `RECOMP_PATCH`. Only one mod may replace a given function; `RECOMP_FORCE_PATCH` replaces
+   one the port itself patches.
+
+<Callout type="warning">
+**Functions the port needs:** replacing one of nine functions the port's features call (the main tick, fog, world
+tick, `controlPlatform`, `refuelControl`, the aim controls of overlays 15–17, `squadsFireWeapon`) is allowed, but
+those features turn off; `jfg_mods.log` and the in-game Mods menu say so in orange. A few menu, pause and map functions
+can't be hooked at all.
+</Callout>
+
+## Helpers
+
+```c
+#include "modding.h"
+#include "jfg_api.h"   // JFG_API_VERSION 3
+```
+
+| Helper | Since | What |
+|---|---|---|
+| `int jfg_api_version(void)` | 1 | The API version the running game provides |
+| `float jfg_get_tick_scale(void)` | 1 | Game time this tick covers compared with the original: 1.0 at 30 fps, 0.5 at 60. Multiply per-tick changes by it |
+| `int jfg_get_level(void)` | 1 | The current level number |
+| `int jfg_get_language(char* id, int size)` | 2 | Copies the shown locale's id; returns 0 for English, 1 for any other |
+| `int jfg_world_find(const char* planet)` | 3 | A planet's index by `"mod:id"`, or -1 |
+| `int jfg_world_state(int planet)` | 3 | Bits: 1 open, 2 entered, 4 completed; -1 for no such planet |
+| `void jfg_world_unlock(int planet)` | 3 | Opens a planet (`"unlock": "script"` planets wait for this) |
+| `void jfg_world_complete(int planet)` | 3 | Marks a planet completed |
+| `int jfg_galaxy_find(const char* galaxy)` | 3 | A galaxy's index (`"main"` is the game's), or -1 |
+| `int jfg_galaxy_current(void)` | 3 | The galaxy the map shows; -1 while it's closed |
+| `void jfg_galaxy_show(int galaxy)` | 3 | The next time the map opens, it opens on this galaxy |
+
+Also from `"*"`: `recomp_printf`, which writes to `bin/jfg_mods.log` and stderr.
+
+## Events
+
+Listen with `RECOMP_CALLBACK("*", event_name)`. Events with a payload pass a struct you can change; set `cancel` to 1
+to stop the game's action.
+
+| Event | Since | When |
+|---|---|---|
+| `jfg_on_game_tick(int frames)` | 1 | Once per game tick, before the game runs it; `frames` is 2 at 30 fps, 1 at 60 |
+| `jfg_on_level_change(int level, int character)` | 1 | The game starts changing to `level` |
+| `jfg_on_boss_fight_control(void* player, int frames, int character)` | 1 | Each tick of a boss fight, before the game's control code; character 0 Vela, 1 Juno, 2 Lupus |
+| `jfg_on_blood_spurt(JfgBloodSpurt* b)` | 1 | Blood drops are about to be added: position, velocity, alpha, count, scale, `amount` in percent, `cancel` |
+| `jfg_on_blood_hit(JfgBloodHit* h)` | 1 | A blood hit sprite: position, `cancel` |
+| `jfg_on_severed_limb_tick(void* limb, int frames)` | 1 | Each tick a severed body part is updated |
+| `jfg_on_object_draw(JfgObjectDraw* d)` | 1 | An object is about to be drawn: `object`, `cancel` to draw nothing |
+| `jfg_on_sound_play(JfgSoundPlay* s)` | 1 | A sound effect is about to start: change `id`, or `cancel` |
+| `jfg_on_screen_flash(JfgScreenFlash* f)` | 1 | The red hit flash: change `color` (RGBA) or `cancel` |
+| `jfg_on_sidekick_tick(void* floyd, int frames)` | 1 | Each tick Floyd is updated |
+| `jfg_on_language_change(void)` | 2 | The player chose another language |
+| `jfg_on_map_open(int galaxy)` | 3 | The planet map opened (title or pause menu) on that galaxy |
+| `jfg_on_galaxy_change(int galaxy)` | 3 | The player switched galaxy with L / R |
+| `jfg_on_planet_select(int planet)` | 3 | The player chose a mod's planet; its level starts next |
+
+## Example: half the blood, no red flash
+
+```c
+#include "modding.h"
+#include "jfg_api.h"
+
+RECOMP_CALLBACK("*", jfg_on_blood_spurt) void less_blood(JfgBloodSpurt* b) {
+    b->amount = b->amount / 2;
+}
+
+RECOMP_CALLBACK("*", jfg_on_screen_flash) void no_flash(JfgScreenFlash* f) {
+    f->cancel = 1;
+}
+```
+
+## Library mods
+
+A mod can export functions (`RECOMP_EXPORT`) and its own events (`RECOMP_DECLARE_EVENT`). Other mods import them with
+`RECOMP_IMPORT("lib_id", ...)`, listen with `RECOMP_CALLBACK("lib_id", event)`, and list the library in
+`dependencies`. Without the library installed, the game refuses the mod with "Missing dependency".
+
+## Drawing from a mod
+
+A mod's own display lists, vertices, matrices and textures in its memory (0x81000000 and up) are drawn as they are.
+There's no model API yet <Status s="planned" />.
+
+## Debugging
+
+- `bin/jfg_mods.log`: your `recomp_printf` lines, data-mod replacements and conflicts, and features turned off by
+  replaced functions.
+- **F9 › Mod API**: each event's calls per second, how many were listened to, and how many mods listen.
+
+## Planned
+
+- Weapon helpers and events ([Weapons](/api/weapons#planned-new-weapons)) <Status s="planned" />
+- Object kinds with their own behaviour, spawning helpers in C, projectile hit events <Status s="planned" />
+- Pause-screen hooks <Status s="planned" />

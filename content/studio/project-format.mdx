@@ -1,0 +1,56 @@
+---
+title: Project format
+description: What is in a JFG-Studio project folder and in the pack it builds.
+---
+
+# Project format
+
+A Studio project is a folder ending in `.jfgproj`. Every file is plain JSON (sorted keys, one-space indent) so
+projects diff cleanly in git. Studio checks every file against its schema when it opens a project and lists all
+problems at once in the Console.
+
+## The folder
+
+| Path | Holds |
+|---|---|
+| `project.json` | `id` (the mod id), `version`, `name`, `authors`, `description`, `minimumRecompVersion`, `dependencies` |
+| `levels/<name>/level.json` | The level's `name`, `track`, `sky`, `music`, `ambient` and `header` fields (fog, clear colour, world, tune, fov, lights…); `base` for an edit of a stock level |
+| `levels/<name>/objects.json` | The level's objects: `uid`, `name`, `type`, `pos`, `size`, `fields`, and for exits a `target` |
+| `planets/<name>.json` | `displayName`, `entryLevel` per hero; a `disc`, `routes`, `galaxy` and `unlock`, or `replaces` a stock map point |
+| `galaxies/<name>.json` | `name` (shown at the top of the map) and `home` |
+| `geometry/<name>.glb` | Level models from Blender; the Water tool adds water planes here |
+| `music/<name>.ogg` | Music, with optional `LOOPSTART` / `LOOPLENGTH` comments |
+| `kinds/<name>.json`, `kinds/<name>/<slot>.png` | Reskinned types: `base`, `scale`, `textures` |
+| `triggers.json` | The Triggers window's triggers |
+| `weapons.json` | The Weapons window's values |
+| `scripts/*.lua` | Your Lua scripts |
+| `build/<mod id>.nrm` | What Build pack writes |
+
+File and folder names use lower case letters, digits, `_` and `-`.
+
+## References
+
+Projects never contain game data. They name it:
+
+| Reference | Means |
+|---|---|
+| `stock:objtype/0x78` | An object type of the player's own game (here the BlueAnt) |
+| `stock:level/21` | A stock level (Goldwood's Forest First) |
+| `pack:track/landing` | The project's own `geometry/landing.glb` |
+| `pack:kind/fire_ant` | The project's own kind |
+| `pack:music/zephyra_landing` | The project's own OGG |
+| `othermod:level_x` | Content from a dependency |
+
+Categories: level, track, objlist, objtype, kind, model, texture, anim, sound, music, text, world, mappoint, disc,
+weapon. Numbers may be decimal or `0x` hex.
+
+## What the build writes
+
+The `.nrm` is a zip with `mod.json` and the [pack files](/api/files): `jfg_assets.json` with the pack's entries and
+patches, `jfg_world.json` for planets and galaxies, `jfg_music.json`, `jfg_scripts.json` with your scripts plus the
+compiled triggers and weapons, and the data, music and script files. A take-over planet adds a `patch.bps`.
+
+## Outside the project
+
+Settings live in your user config folder (`settings.json`). The **catalog** made from your ROM, exported stock tracks
+and models, and Studio's logs live in your user data folder. None of it belongs in a project or a pack.

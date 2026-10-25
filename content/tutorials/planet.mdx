@@ -1,0 +1,71 @@
+---
+title: 'Tutorial: a galaxy of your own'
+description: Put your planets on a galaxy of your own, hidden until the world before them is completed.
+---
+
+# A galaxy of your own
+
+Give your planets their own planet map, so they never crowd the game's galaxy, and make each one appear only once the
+one before it is beaten, as the game's own planets do. This is how the example world's Zephyra Expanse works.
+
+<Figure src="/img/studio-planet.png" alt="The Planet window showing the Zephyra Expanse with Zephyra, Glacia and Nimbus" caption="A galaxy of the pack's own: an empty grid with only its planets and routes." />
+
+<Steps>
+### Make the first planet and its galaxy
+
+In **Planet**, press **New planet**. Under **Galaxy**, choose **New galaxy…**. Give the galaxy a **Galaxy name** (it's
+shown at the top of the map) and leave this planet as its **home**: the cursor starts there.
+
+### Place it and choose when it opens
+
+Click the empty grid to place the disc. Set **Entry level** for each hero. For **Opens**:
+
+| Option | The planet shows… |
+|---|---|
+| from the start | as soon as the pack is loaded |
+| once its own level was entered | after the player first reaches its level some other way, e.g. a portal (it's "discovered") |
+| by a trigger or script | when a trigger's `unlock planet` action or `jfg.unlock_planet` runs |
+| once another planet was entered | after the player has been to another planet |
+| once another planet was completed | after another planet is completed |
+
+The home planet should open from the start (or be discovered), or the galaxy never shows.
+
+### Add the next planet
+
+**New planet** again (it joins the galaxy you're looking at). Click the first planet to draw the route from it: only
+free stick directions are offered. Set **Opens** to *once another planet was completed* and **After planet** to the
+first.
+
+### Complete the first world
+
+A planet is completed by a trigger. At the end of the first world's last level, make a trigger: **When** `enter`
+with the finish area (select objects there and press **Area from the Scene's selection**), and the action
+`complete planet` with the first planet.
+
+### Play it
+
+Save and **Play**. Reach the finish: the next planet appears on the map. On the planet map, **R** switches to your
+galaxy and **L** back to the game's (on a controller also RB/LB and the D-pad).
+</Steps>
+
+<Callout type="info">
+Opened, entered and completed planets are kept per save file, in `saves/<save>_worlds.json` next to the game's save,
+written when the game saves.
+</Callout>
+
+## From code
+
+```lua
+jfg.complete_planet("glacia")            -- open what comes after Glacia
+local open, entered, done = jfg.planet("nimbus")
+jfg.show_galaxy("expanse")               -- the next time the map opens, it's on the Expanse
+```
+
+C mods have `jfg_world_*` and `jfg_galaxy_*`, and the events `jfg_on_map_open`, `jfg_on_galaxy_change` and
+`jfg_on_planet_select` ([C API](/api/c)).
+
+## On the game's galaxy instead
+
+Leave **Galaxy** on the game's galaxy, click a stock planet to route from, and pick **with the stock point its route
+leaves**: your planet shows once the player has that stock planet. If another pack already uses that direction from
+that planet, the port moves yours to a free one (and logs it).

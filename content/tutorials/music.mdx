@@ -1,0 +1,56 @@
+---
+title: 'Tutorial: custom music'
+description: Play your own OGG music in a level, with loop points, and switch tracks from a trigger.
+---
+
+# Custom music
+
+Your own music in your level, looping cleanly, and a different track when the boss gate opens.
+
+<Steps>
+### Make an OGG
+
+Export your track as **OGG Vorbis** (Audacity: File › Export › Export as OGG). Stereo, 44.1 kHz is fine. Keep it
+short-ish and loopable: the port streams it.
+
+### Set loop points (optional)
+
+Without loop points the whole file loops. To loop a section, add two comments (tags) to the OGG, in samples:
+
+| Tag | Value |
+|---|---|
+| `LOOPSTART` | The sample the loop goes back to (e.g. after an intro) |
+| `LOOPLENGTH` | How many samples the loop lasts |
+
+At 44.1 kHz, 2.5 seconds is 110250 samples. Audacity: **Edit Metadata** before export.
+
+### Add it to the project
+
+In the **Level** window, open **Music and sound** and press **Add OGG music…**. Studio copies it into `music/`.
+
+### Pick it for the level
+
+In the same section, choose it in **Music**. Your track plays in place of the game's tune and follows the game's music
+volume, pauses and fades.
+
+### Switch tracks from a trigger
+
+In **Triggers**, make one with **When** `door opens` and the door's id, and add a `music` action with your second
+track. Or from Lua: `jfg.music("victory")` and `jfg.music_stop()`.
+</Steps>
+
+## Stock tunes and ambience
+
+The **Music** list also has every stock tune (listed with a level that uses it), and **Ambient loop 1–3** pick the
+game's ambient sounds: wind, water, machinery. They cost nothing in your pack.
+
+## By hand
+
+Studio writes `jfg_music.json` in the pack:
+
+```json
+{ "tracks": { "boss": "music/boss.ogg" },
+  "levels": { "level_arena": "boss" } }
+```
+
+A level can be one of yours (`level_x`) or a stock one (`stock:21`).

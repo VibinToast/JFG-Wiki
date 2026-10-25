@@ -1,0 +1,95 @@
+---
+title: 'Tutorial: a first code mod'
+description: Build a C code mod that listens to the port's events, using the mod template and RecompModTool.
+---
+
+# A first code mod
+
+A C mod that halves the blood, turns off the red hit flash and logs every level change. It shows the whole code-mod
+loop: write, build, install, read the log.
+
+<Callout type="warning">
+Code mods need a C toolchain for the N64's CPU. On Windows use **LLVM 18.1.8** (19.1.0 miscompiles MIPS), plus
+`ld.lld` and N64Recomp's **RecompModTool** built from the same fork as the port.
+</Callout>
+
+<Steps>
+### Start from the mod template
+
+The template has `mod.toml`, `mod.ld`, a `Makefile`, `modding.h`, and the decomp's headers and symbol files as
+submodules. Add the port's `mod_api/jfg_api.h` to your include path.
+
+### Fill in the manifest
+
+In `mod.toml`:
+
+```toml
+[manifest]
+id = "yourname.less_blood"
+version = "1.0.0"
+display_name = "Less Blood"
+authors = ["you"]
+game_id = "jet-force-gemini"
+minimum_recomp_version = "1.1.8"
+```
+
+### Write the code
+
+```c filename="src/main.c"
+#include "modding.h"
+#include "jfg_api.h"
+
+RECOMP_IMPORT("*", int recomp_printf(const char* fmt, ...));
+
+RECOMP_CALLBACK("*", jfg_on_blood_spurt) void less_blood(JfgBloodSpurt* b) {
+    b->amount = b->amount / 2;          // 100 = the game's own amount
+}
+
+RECOMP_CALLBACK("*", jfg_on_screen_flash) void no_flash(JfgScreenFlash* f) {
+    f->cancel = 1;
+}
+
+RECOMP_CALLBACK("*", jfg_on_level_change) void log_level(int level, int character) {
+    recomp_printf("less_blood: level %d as character %d\n", level, character);
+}
+```
+
+### Build
+
+```bash
+make
+RecompModTool mod.toml build
+```
+
+The `.nrm` lands in `build/`.
+
+### Install and check
+
+Copy it into the port's `mods` folder, turn it on, and play. `bin/jfg_mods.log` shows your lines; **F9 › Mod API**
+shows how often each event fires and how many mods listen.
+</Steps>
+
+## Changing values the frame-rate-safe way
+
+The port runs at 30 or 60 fps. Multiply anything you change per tick by `jfg_get_tick_scale()` (1.0 at 30 fps, 0.5 at
+60), or use the `frames` argument of `jfg_on_game_tick`.
+
+```c
+RECOMP_IMPORT("*", float jfg_get_tick_scale(void));
+
+RECOMP_CALLBACK("*", jfg_on_game_tick) void every_tick(int frames) {
+    timer += 1.0f * jfg_get_tick_scale();
+}
+```
+
+## Hooks and patches
+
+For things the API doesn't cover:
+
+```c
+RECOMP_HOOK("SquaddieControl") void before_squaddie(void* obj) { /* runs before the game's function */ }
+RECOMP_PATCH void someGameFunction(void) { /* replaces it: only one mod may */ }
+```
+
+Game variables you read must be declared `extern` with the decomp's exact type. See [C mod API](/api/c) for the rules,
+and [When mods meet](/api/mods-together) for what happens when two mods change the same function.
