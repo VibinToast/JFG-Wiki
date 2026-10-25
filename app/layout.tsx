@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           navbar={navbar}
           footer={footer}
           pageMap={await getPageMap()}
-          docsRepositoryBase="https://github.com/VibinToast/jfg-wiki/tree/main"
+          docsRepositoryBase="https://github.com/VibinToast/JFG-Wiki/tree/main"
           editLink="Edit this page on GitHub"
           feedback={{ content: null }}
           sidebar={{ defaultMenuCollapseLevel: 1 }}
