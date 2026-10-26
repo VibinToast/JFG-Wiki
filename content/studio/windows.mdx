@@ -59,13 +59,26 @@ sound's range); lines join region corners, patrol links, members to their squadr
 - **Camera**: right mouse to look, with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>/<kbd>Q</kbd><kbd>E</kbd> to fly
   (<kbd>Shift</kbd> 3×), wheel for speed, middle mouse to pan, <kbd>Alt</kbd>+left drag to orbit.
 - **Place**: drag a row from Prefabs into the Scene.
-- In a stock-level edit, the level's own objects show in a dim blue and can't be selected.
+- **Right-click** an object (a click, not a drag) for its menu: frame it, select its whole squad, duplicate, drop
+  to the floor, add cover, delete, or for one of the game's objects, revert it.
+- In a stock-level edit, the game level's own objects show in a dim blue while they're read-only, and like your
+  own once **Edit the game level's objects** is on (Hierarchy).
 
 ## Hierarchy
 
 <Figure src="/img/studio-hierarchy.png" alt="The Hierarchy: a squad with members, navigation regions, start points, exits, pickups" caption="Squads with their members under them, regions together, everything else in a list." width={320} />
 
-The open level's objects. Click to select, <kbd>Ctrl</kbd>+click to add.
+The open level's objects. Click to select, <kbd>Ctrl</kbd>+click to add, right-click for a menu.
+
+In an edit of one of the game's levels, the objects you added come first, then **The game level's objects**:
+- **Read-only** (the default): they're listed grey. You can look at one in the Inspector, or right-click > **Copy
+  into the level** to start one of your own from it.
+- **Edit the game level's objects** (the checkbox at the top): move, change and remove them like your own. A
+  changed one is marked `*`, removed ones are listed under **Removed**, and right-click > **Revert to the game's**
+  or **Put back** undoes it.
+
+The project keeps only what you changed, and the pack carries only that, so other mods can change the same level.
+Some of the game's levels share an object list: a change shows in each of them.
 
 ## Inspector
 
@@ -101,7 +114,8 @@ The open level's objects. Click to select, <kbd>Ctrl</kbd>+click to add.
 <Figure src="/img/studio-project.png" alt="The Project window: levels, planets, geometry, dependencies" caption="The project's levels, planets, geometry files and dependencies." />
 
 Click a level to open it. **New level** makes one on your first geometry; **Edit a stock level…** adds to one of
-the game's levels (your objects are added; its own stay).
+the game's levels (your objects are added; its own stay, or change once you turn on **Edit the game level's
+objects** in the Hierarchy).
 
 ## Prefabs
 
