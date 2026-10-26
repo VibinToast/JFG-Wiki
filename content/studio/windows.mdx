@@ -59,8 +59,10 @@ sound's range); lines join region corners, patrol links, members to their squadr
 - **Camera**: right mouse to look, with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>/<kbd>Q</kbd><kbd>E</kbd> to fly
   (<kbd>Shift</kbd> 3×), wheel for speed, middle mouse to pan, <kbd>Alt</kbd>+left drag to orbit.
 - **Place**: drag a row from Prefabs into the Scene.
-- **Shapes**: objects the game draws as sprites (pickups) or not at all show as a shape: a start point is a capsule
-  with a nose the way the hero will face, pickups and keys a floating diamond. A squad that spawns its own members
+- **Sprites**: objects the game draws as sprites (health, ammo pods, effects) show as the game's own sprite, its first
+  frame, always facing the camera and at its in-game size. The sprites come from your ROM into the local catalog.
+- **Shapes**: objects with nothing to draw show as a shape: a start point is a capsule with a nose the way the hero
+  will face; a pickup or key with no sprite, a floating diamond. A squad that spawns its own members
   (a sentry, flyers, a Tribal to rescue) shows as its enemy, and squads are named by what they hold.
 - **Right-click** an object (a click, not a drag) for its menu: frame it, select its whole squad, duplicate, drop
   to the floor, add cover, delete, or for one of the game's objects, revert it.
@@ -133,6 +135,7 @@ objects** in the Hierarchy).
 - Search by name, hex id or field set. **In stock** shows only types the game's own levels place.
 - **Groups**: *Squad, region and locked door*; *Exit and return start point*; *Navigation region*.
 - **Pack kinds**: your reskinned types.
+- Types the game draws as sprites have a thumbnail of the sprite; select one to see it larger.
 - Categories: Pickups, Doors & switches, Lights & effects, Props, Players & exits, Enemies & navigation, and *Other
   (fields not decoded)*, placed as a copy of a stock entry.
 - **Start from**: which stock entry the new object copies (its fields you don't set keep the game's values).
