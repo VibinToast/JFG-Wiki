@@ -1,83 +1,116 @@
 ---
 title: Squads that move
-description: What a squad needs to walk, turn and fight in a new level, and how Studio sets it up.
+description: What a squad needs to walk, turn and fight in a new level, and how to set up cover and patrols.
 ---
 
 # Squads that move
 
 A squad is a **squadron** (the entry that runs the group), its **members** (the enemies) and a **navigation
-region** they keep to. Getting the members to spawn and fire is easy. Getting them to walk, turn round and come after
-the player needs several things to be right. Each rule below was found in the decomp and play-tested in a new level.
+region**, the squad area they keep to. Getting the members to spawn and fire is easy. Getting them to walk, turn round
+and come after the player takes a few more things, and each rule on this page was found in the decomp and
+play-tested in a new level.
 
 Studio sets all of it up when it makes a squad, and the validator names whatever is missing.
 
-## The rules
+The pictures are Studio's top-down preview of a test yard: the squad area in red, the squadron as a red square and
+its members as red dots, holes in pink, a patrol route in blue. Up is −z.
 
-### The region goes counter-clockwise
+## The squad area
 
-A region is a polygon of region corners, numbered in order around it. Seen from above with x to the right and z
-down the page, the corners must go **counter-clockwise**. The game finds nothing inside a clockwise region, so its
-squad stays where it spawned and never turns. The game's own clockwise regions are holes (below), not areas.
+A squad area is a polygon of region corners, numbered in order round it. Seen from above, with x to the right and
+z down the page, the corners must go **counter-clockwise**. The game finds nothing inside a clockwise area, so its
+squad stays where it spawned and never turns.
 
-Studio winds every region it makes counter-clockwise, whichever way you click the corners. The validator stops a
-clockwise one (`region-winding`); `fix_squad` turns it round.
+Studio winds every area counter-clockwise, whichever way you click the corners. The validator stops a clockwise one
+(`region-winding`), and `fix_squad` turns it round.
 
-### There must be cover
+Members only notice the player while the player is inside an area too (any region numbered 1 or more). Make the area
+cover the floor the squad fights on and the way the player comes in.
 
-Smart squads (`behaviour` 0x11, used by many of the game's ant squads) only move to **cover**: corners the player can't
-see round. Those are the corners of **holes** (obstacles cut out of the region) and the region's own inward corners.
+## Cover
 
-In a plain rectangle over open floor there is no such corner, so the members crouch and fire and hardly ever move.
-Almost every squad in the game has a region shaped round its room, with holes for pillars and crates.
+Smart squads (`behaviour` 0x11, used by many of the game's ant squads) only move to **cover**: corners the player
+can't see round. Those are the corners of **holes**, obstacles cut out of the area, and the area's own inward
+corners.
 
-So give a squad things to hide behind inside its region: blocks, crates, pillars, low walls. Each one is made a
-hole: a region of its own, wound **clockwise** round the obstacle, with a **region settings** entry (flags 1)
-linking it to the squad's region. The members run to its corners, and keep out of it, so they don't walk into the
-obstacle.
+<Figure src="/img/squads-no-cover.png" alt="A rectangular squad area with two crates inside it that are not holes" caption="No cover: the crates are only geometry. The ants crouch and fire and hardly ever move." />
 
-- `place_squad` and `add_cover` (the agent tools) find the obstacles in the region and make them holes.
-- An obstacle that crosses the region's edge isn't made a hole: draw the region's outline round it instead (an
-  inward corner is cover too).
-- The validator warns about a smart squad whose region is a plain shape with no holes (`squad-cover`).
+In a plain rectangle there is no such corner, so the members crouch and fire. Almost every squad in the game has an
+area shaped round its room, with holes for its pillars and crates.
 
-### The player must be in a region
+<Figure src="/img/squads-cover.png" alt="The same squad area with each crate cut out as a pink crossed hole" caption="With cover: each crate is a hole. The ants run between the crates, turn and come after the player, and keep out of the crates." />
 
-Members only notice the player when the player stands inside a region too (any region numbered 1 or more). Make a squad's
-region cover the floor they fight on and the way the player comes in.
+A hole is a region of its own, wound **clockwise** round the obstacle, with a **region settings** entry (flags 1)
+that links it to the squad area. Members run to its corners and keep out of it, so they don't walk into the obstacle.
 
-### Spawning
+### Setting up cover
+
+1. Put something to hide behind inside the squad area: blocks, crates, pillars or low walls, at least 40 units
+   taller than the floor. Keep them off the edge of the area. For an obstacle on the edge, draw the area's outline
+   round it instead, since an inward corner is cover too.
+2. Make the obstacles holes:
+   - **Editor**: a new squad (*Groups › Squad, region and locked door*) gets holes round the obstacles in its area by
+     itself. For a squad made before, or after you add obstacles, select the squadron and press **Add cover** in the
+     Inspector. To draw a hole by hand, pick the **Region** tool (<kbd>G</kbd>), tick **Hole** in the toolbar and
+     click the corners round the obstacle.
+   - **Agent tools**: `place_squad` adds cover itself; `add_cover(level, squadron)` does it for an existing squad.
+3. Run the validator. It warns about a smart squad whose area is a plain shape with no holes (`squad-cover`).
+
+## Patrols
+
+A patrol squad walks a route of **patrol points** and fights like a smart squad once it sees the player: it turns,
+takes cover and comes after them. Walking the route is play-tested; the switch to fighting follows the decomp.
+
+<Figure src="/img/squads-patrol.png" alt="The squad area with its two holes and a blue ring of six patrol points round the middle" caption="A patrol: a ring of six points. The squad starts from the point nearest to it and walks the ring until it spots the player." />
+
+How a squad walks its route:
+
+- It starts from the patrol point nearest the squadron, so place the squadron next to the route.
+- At each point it picks a link it didn't come along. A chain is walked there and back; a ring goes round and round.
+- It walks straight from point to point with no path-finding, so keep every leg of the route clear of obstacles and
+  wide enough for the whole squad.
+- Never give a patrol point a **start value** (`startAtLoad`). It means "ride this point's lift", and the squad
+  nearest it stops at its first point for good. The validator warns (`patrol-start`).
+
+### Setting up a patrol
+
+- **Agent tools**: `place_patrol(level, points, loop, squadron)` lays the points along `points`, links them in order
+  (`loop` joins the last to the first) and makes the squadron a patrol. It copies a stock patrol squad of the same
+  enemy and sets the behaviours. A squad more than 300 from its route is moved to the route's first point, with its
+  members and area.
+- **Editor**:
+  1. Pick the **Patrol** tool (<kbd>P</kbd>) and click the floor for each point. Each one links back to the one
+     before. Click an existing point to link to it, which closes a ring.
+  2. Select the squadron and set, in the Inspector: `kind` 6 (patrol), `behaviour` 2 (walk the route),
+     `alertBehaviour` and `hurtBehaviour` 17 (smart: fight once the player is seen or shoots).
+  3. Move the squadron next to the first point, and keep the route inside its area.
+
+<Callout type="info">
+To watch a patrol without being seen, turn on **Tools › Cheats › Enemies ignore you** in the game (F10) before the
+squad spots you. With it on, squads don't see you, hear anything or react when shot. Patrols keep walking, and smart
+squads stand where they are.
+</Callout>
+
+## Spawning
 
 A copied stock squadron spawns when a hero walks into a zone placed for **its own level**, so in a new level it may
 never appear. Studio's squads spawn as soon as the level starts (`trigger` 3). The validator warns about one that
 still waits for a stock zone (`squad-trigger`).
 
-### The squadron entry
+## The squadron entry
 
 Some of a squadron's bytes aren't decoded yet, so Studio copies them from a stock squad of the **same enemy** and the
 **same mode**. It picks a smart one (`behaviour` 0x11) before any other, and never a sentry (9), which never walks and
 only faces one way. Any member type works, the pack's own enemy kinds included. `fix_squad` mends a squad that copies
-the wrong one (`squad-stock`).
-
-## Patrols
-
-A patrol squad walks a route of patrol points (`place_patrol`) and fights like a smart squad once it sees the player.
-
-- It walks straight from point to point with no path-finding, so keep each leg of the route clear of obstacles and
-  wide enough for the whole squad.
-- Never give a patrol point a **start value**. It means "ride this point's lift": the squad nearest it stops at its
-  first point for good. The validator warns (`patrol-start`).
-
-<Callout type="info">
-Patrols are taken from the decomp and haven't been play-tested yet.
-</Callout>
+the wrong one (`squad-stock`), makes it spawn at once and turns a clockwise area round.
 
 ## Validator rules
 
 | Rule | What it means |
 |---|---|
-| `region-winding` | The region goes clockwise: its squad stands still. Error. |
-| `squad-cover` | A smart squad's region has no holes and no inward corner: the members stand and fire. |
+| `region-winding` | The squad area goes clockwise: its squad stands still. Error. |
+| `squad-cover` | A smart squad's area has no holes and no inward corner: the members stand and fire. |
 | `squad-trigger` | The squad waits for a stock level's zone and may never spawn. |
 | `squad-stock` | The squadron copies another enemy's squad, the wrong mode or a sentry. |
 | `patrol-start` | A patrol point has a start value: the squad near it stops at its first point. |
-| `squad-region` | The squadron's region has no corners in this level: the game crashes when the level starts. Error. |
+| `squad-region` | The squadron's area has no corners in this level: the game crashes when the level starts. Error. |
