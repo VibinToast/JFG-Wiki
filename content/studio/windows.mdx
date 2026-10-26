@@ -94,6 +94,12 @@ Some of the game's levels share an object list: a change shows in each of them.
   object was copied from. "Partly decoded" means some of the entry's bytes are kept as they are.
 - **Entry** (closed): the raw bytes, for checking.
 
+**Door lock lights.** The light on a door frame has no setting for which door or squad it belongs to: it shows the
+**nearest door**, and comes on when nothing keeps that door locked any more (its squad is dead, its switch shot).
+Select one and the Inspector's **Lights up for** names that door and the squad or switch that locks it; click either
+to select it. To tie a light to a squad, give the squad the door's door id and keep the light nearer that door than
+any other.
+
 ## Level
 
 <Figure src="/img/studio-level.png" alt="The Level window" caption="The open level's settings." width={345} />
