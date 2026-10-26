@@ -75,6 +75,10 @@ print(jfg64.layout_report(level))
   - `tunnel` is roofed, `corridor` has walls and open sky, `canyon` has tall walls.
   - They wind through `via` bends and `wiggle`, slope from one room's floor to the other's, and cut a doorway in
     each room.
+- **Doors**: a door has to close its passage. Give the link `"landing": 160`, a stretch of level floor at each end
+  before the slope, and stand the door on it inside the passage. In a room's doorway the opening is wider than the
+  door and the player walks round it. Studio's placement check says when a door is narrower than its passage or
+  stands on a slope.
 - **Defaults**: the game's own sizes (passages 200 wide, tunnels 300 high, rooms 600 high).
 - **Outdoors**: [`terrain`](/blender/modelling#organic-ground) makes the open ground, rims and clearings.
 

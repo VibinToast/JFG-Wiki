@@ -48,7 +48,11 @@ for i, (x, y, z) in enumerate(jfg64.scatter_points(ground, 14, min_gap=220, max_
   - `paths`: smoothed tracks between areas;
   - `rim`: a ring of hills that ends the level instead of walls.
   Slopes inside the rim are kept below the 45° the heroes can walk up. A new `seed` gives a new landscape.
-- **`rock`** makes a lumpy boulder sunk into the ground. Rocks inside a squad's area become its cover in Studio.
+- **`rock`** makes a lumpy boulder sunk into the ground. Rocks inside a squad's area become its cover in Studio,
+  but only rocks enemies can hide behind: about 100 tall and 80 across (`radius` 90 or more, `squash` 1.0-1.4).
+  The radius-60 rocks above are landmarks and steps.
+- **`ground_height(obj, x, y)`** is the highest surface there. Under a roofed room that's the roof's top, so pass
+  `below` (the room's floor + 100) for the floor.
 - **`scatter_points`** finds spots on the gentle ground, a set distance apart, for rocks, pickups or props.
 - Keep `step` (the grid size, default 50) between 40 and 80: every grid square is two triangles.
 
