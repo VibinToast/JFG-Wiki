@@ -81,8 +81,10 @@ How a squad walks its route:
 - **Editor**:
   1. Pick the **Patrol** tool (<kbd>P</kbd>) and click the floor for each point. Each one links back to the one
      before. Click an existing point to link to it, which closes a ring.
-  2. Select the squadron and set, in the Inspector: `kind` 6 (patrol), `behaviour` 2 (walk the route),
-     `alertBehaviour` and `hurtBehaviour` 17 (smart: fight once the player is seen or shoots).
+  2. Select the squadron and click **Patrol** in the Inspector, next to **Add cover**. It does what `place_patrol`
+     does to a squadron: `kind` 6 (patrol), a stock patrol squad of the same enemy copied, `behaviour` 2 (walk the
+     route), and `alertBehaviour` and `hurtBehaviour` 17 (smart: fight once the player is seen or shoots). One undo
+     step. The status bar warns when no patrol point is within 300 of the squadron.
   3. Move the squadron next to the first point, and keep the route inside its area.
 
 <Callout type="info">
