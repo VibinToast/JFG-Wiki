@@ -1,0 +1,164 @@
+---
+title: 'C API: Camera'
+description: Reading and scripting the camera, shakes, field of view and camera events in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Camera
+
+Where the camera is, and taking it over for intros, boss reveals and scripted scenes.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_camera_get` | Camera position, target and field of view | <Status s="planned" /> |
+| `jfg_camera_look_at` | Move the camera to a shot | <Status s="planned" /> |
+| `jfg_camera_follow` | Follow an object from an offset | <Status s="planned" /> |
+| `jfg_camera_path` | Fly along points | <Status s="planned" /> |
+| `jfg_camera_release` | Hand the camera back to the player | <Status s="planned" /> |
+| `jfg_camera_shake` | Shake | <Status s="planned" /> |
+| `jfg_camera_set_fov` | Field of view | <Status s="planned" /> |
+| `jfg_camera_letterbox` | Cinema bars | <Status s="planned" /> |
+| `jfg_on_camera_update` | Change the camera each frame | <Status s="planned" /> |
+| `jfg_on_cutscene_start`, `jfg_on_cutscene_end` | The game's cutscenes; skip them | <Status s="planned" /> |
+
+<Callout type="info">
+While a mod holds the camera, the player keeps control unless the mod also calls `jfg_player_freeze`. Every mod's
+camera is released on a level change.
+</Callout>
+
+### jfg_camera_get <Status s="planned" />
+
+```c
+/** @brief The camera. */
+typedef struct {
+    JfgVec3 pos;      ///< Where it is
+    JfgVec3 target;   ///< What it looks at
+    float   fov;      ///< Vertical field of view in degrees
+    int     scripted; ///< 1 while a mod holds it
+} JfgCamera;
+
+/**
+ * @brief  The camera now, for the player's view.
+ * @target 9
+ */
+void jfg_camera_get(int player, JfgCamera* out);
+```
+
+### jfg_camera_look_at <Status s="planned" />
+
+```c
+/**
+ * @brief  Moves the camera to a fixed shot.
+ * @param  frames  Blend time from where it is; 0 cuts.
+ * @target 9
+ */
+void jfg_camera_look_at(const JfgVec3* pos, const JfgVec3* target, int frames);
+```
+
+### jfg_camera_follow <Status s="planned" />
+
+```c
+/**
+ * @brief  Follows an object from an offset in its own facing (behind, above), looking at it.
+ * @target 9
+ */
+void jfg_camera_follow(JfgObject* obj, const JfgVec3* offset, int frames);
+```
+
+### jfg_camera_path <Status s="planned" />
+
+```c
+/**
+ * @brief  Flies through points, smoothly, looking at a target (NULL: along the path).
+ * @param  frames  Time for the whole path.
+ * @return A handle; jfg_camera_busy tells when it's done.
+ * @target 9
+ */
+int jfg_camera_path(const JfgVec3* points, int count, const JfgVec3* target, int frames);
+int jfg_camera_busy(void);
+```
+
+### jfg_camera_release <Status s="planned" />
+
+```c
+/**
+ * @brief  Gives the camera back to the player, blending to their view.
+ * @target 9
+ */
+void jfg_camera_release(int frames);
+```
+
+### jfg_camera_shake <Status s="planned" />
+
+```c
+/**
+ * @brief  Shakes the camera: hits, quakes, explosions.
+ * @param  strength  World units of movement.
+ * @param  frames    How long; it fades out.
+ * @target 9
+ * @note   Follows the player's screen-shake setting.
+ */
+void jfg_camera_shake(float strength, int frames);
+```
+
+### jfg_camera_set_fov <Status s="planned" />
+
+```c
+/**
+ * @brief  Field of view, in degrees; 0 restores the game's.
+ * @target 9
+ */
+void jfg_camera_set_fov(float fov, int frames);
+```
+
+### jfg_camera_letterbox <Status s="planned" />
+
+```c
+/**
+ * @brief  Black bars at top and bottom for scripted scenes.
+ * @target 9
+ */
+void jfg_camera_letterbox(int on, int frames);
+```
+
+### jfg_on_camera_update <Status s="planned" />
+
+```c
+/**
+ * @brief  After the game placed the camera, before drawing: change it for this frame.
+ * @target 9
+ */
+RECOMP_CALLBACK("*", jfg_on_camera_update) void my_cam(int player, JfgCamera* cam);
+```
+
+### jfg_on_cutscene_start, jfg_on_cutscene_end <Status s="planned" />
+
+```c
+/**
+ * @brief  One of the game's cutscenes starts or ends.
+ * @param  cutscene  Its number.
+ * @param  skip      Set *skip to 1 to skip it, as the player's skip button does.
+ * @target 9
+ */
+RECOMP_CALLBACK("*", jfg_on_cutscene_start) void my_cut(int cutscene, int* skip);
+RECOMP_CALLBACK("*", jfg_on_cutscene_end)   void my_cut_end(int cutscene);
+```
+
+## Example: a boss reveal
+
+```c
+static void end_reveal(void* arg) {
+    jfg_camera_letterbox(0, 20);
+    jfg_camera_release(30);
+    jfg_player_freeze(0, 0);
+}
+
+static void reveal(JfgObject* boss) {
+    JfgVec3 bp, eye;
+    jfg_object_get_pos(boss, &bp);
+    eye = (JfgVec3){ bp.x, bp.y + 150, bp.z - 400 };
+    jfg_player_freeze(0, 1);
+    jfg_camera_letterbox(1, 20);
+    jfg_camera_look_at(&eye, &bp, 45);
+    jfg_timer_after(120, end_reveal, NULL);
+}
+```

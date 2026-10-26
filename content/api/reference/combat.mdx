@@ -1,0 +1,155 @@
+---
+title: 'C API: Combat'
+description: Health, hit areas, damage and death events, invincibility and explosions in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Combat
+
+Health, hit areas, and what happens when something is hurt or killed. These work on any shootable object: stock
+enemies, kinds, props. Heroes have their own entries in [Players](/api/reference/player).
+
+**How damage works in the game:** shots and blasts lower a target's health directly; only objects with a hit block
+and enough health can be hit. The port watches that and turns it into the events below. Kinds also get them as
+`on_damaged` and `on_killed` callbacks.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_object_get_health`, `jfg_object_set_health` | Health | <Status s="planned" /> |
+| `jfg_object_set_hit` | Give an object a hit area and health | <Status s="planned" /> |
+| `jfg_object_set_hit_scale` | How much damage a hit sphere passes on | <Status s="planned" /> |
+| `jfg_object_damage` | Hurt an object from code | <Status s="planned" /> |
+| `jfg_object_kill` | Kill an object, with its death | <Status s="planned" /> |
+| `jfg_object_set_invincible` | Can't be hurt | <Status s="planned" /> |
+| `jfg_explosion` | A blast that hurts what's near | <Status s="planned" /> |
+| `jfg_on_object_damaged` | Something is about to lose health | <Status s="planned" /> |
+| `jfg_on_object_killed` | Something died | <Status s="planned" /> |
+| `jfg_on_head_shot` | A hit on a head | <Status s="planned" /> |
+
+## Health
+
+### jfg_object_get_health, jfg_object_set_health <Status s="planned" />
+
+```c
+/**
+ * @brief  An object's health. Setting 0 kills it.
+ * @return -1 for objects that can't be hurt.
+ * @target 5
+ * @note   Shots only hit targets with enough health: give kinds their health in on_spawn.
+ */
+int  jfg_object_get_health(JfgObject* obj);
+void jfg_object_set_health(JfgObject* obj, int health);
+```
+
+### jfg_object_set_hit <Status s="planned" />
+
+```c
+/**
+ * @brief  Gives an object a hit area and health, so shots and blasts can hurt it.
+ * @param  radius  Hit sphere radius in world units, around the object's centre.
+ * @param  height  Centre height above its position.
+ * @target 5
+ * @note   The object type must have a hit block (a shootable base, or JFG_KIND_SHOOTABLE for a kind).
+ */
+void jfg_object_set_hit(JfgObject* obj, int health, float radius, float height);
+```
+
+### jfg_object_set_hit_scale <Status s="planned" />
+
+```c
+/**
+ * @brief  How much of a hit's damage a hit sphere passes on: armour, weak spots.
+ * @param  sphere  The sphere's index on the model; -1 for all.
+ * @param  percent 0 = armoured, 100 = normal, 200 = weak spot.
+ * @target 5
+ */
+void jfg_object_set_hit_scale(JfgObject* obj, int sphere, int percent);
+```
+
+### jfg_object_set_invincible <Status s="planned" />
+
+```c
+/**
+ * @brief  Shots still hit (sparks, sound) but take no health.
+ * @param  frames  0 ends it; -1 until turned off.
+ * @target 5
+ */
+void jfg_object_set_invincible(JfgObject* obj, int frames);
+```
+
+## Causing damage
+
+### jfg_object_damage, jfg_object_kill <Status s="planned" />
+
+```c
+/**
+ * @brief  Hurts an object as a hit would (events fire, it flashes); kills it with its own death.
+ * @param  source  Who did it (kill credit), or NULL.
+ * @target 5
+ */
+void jfg_object_damage(JfgObject* obj, int amount, JfgObject* source);
+void jfg_object_kill(JfgObject* obj, JfgObject* source);
+```
+
+### jfg_explosion <Status s="planned" />
+
+```c
+/**
+ * @brief  A blast at a point: its effect, sound, and damage falling off to the radius.
+ * @param  hurts_players  0 to spare the heroes.
+ * @target 5
+ */
+void jfg_explosion(const JfgVec3* pos, float radius, int damage, JfgObject* source, int hurts_players);
+```
+
+## Events
+
+### jfg_on_object_damaged <Status s="planned" />
+
+```c
+/** @brief Damage about to be done. */
+typedef struct {
+    JfgObject* target;
+    JfgObject* source;   ///< The projectile, blast or attacker; NULL for the world
+    JfgObject* owner;    ///< Who fired the projectile, or NULL
+    int        weapon;   ///< The hero's weapon slot, or -1
+    int        sphere;   ///< The hit sphere, -1 for a blast
+    int        amount;   ///< Health lost; changeable
+    int        cancel;   ///< 1: no damage
+} JfgDamage;
+
+/**
+ * @brief  Something is about to lose health (not heroes: see jfg_on_player_damaged).
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_object_damaged) void my_damage(JfgDamage* d);
+```
+
+### jfg_on_object_killed <Status s="planned" />
+
+```c
+/**
+ * @brief  An object's health reached 0. It plays its death next.
+ * @param  killer  The projectile's owner or attacker, NULL if unknown.
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_object_killed) void my_killed(JfgObject* obj, JfgObject* killer);
+```
+
+### jfg_on_head_shot <Status s="planned" />
+
+```c
+/**
+ * @brief  A shot hit an enemy's head: the head pops, as in the game.
+ * @param  cancel  Set *cancel to 1 to keep the head on (damage still counts).
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_head_shot) void my_head(JfgObject* obj, JfgObject* owner, int* cancel);
+```
+
+## Example: double damage with the sniper
+
+```c
+RECOMP_CALLBACK("*", jfg_on_object_damaged) void sniper(JfgDamage* d) {
+    if (d->weapon == 7) d->amount *= 2;
+}
+```

@@ -1,0 +1,262 @@
+---
+title: 'C API: Players and input'
+description: Heroes, their position, health and jetpack, character bodies, Floyd, boss-fight control and controller input in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Players and input
+
+The heroes as the player controls them: who is playing, where they are, their health and abilities, and the
+buttons. Player index 0 is the story player; 1-3 exist in multiplayer.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_boss_fight_control` | Each tick of a boss fight's controls | <Status s="built" /> |
+| `jfg_on_sidekick_tick` | Each tick Floyd is updated | <Status s="built" /> |
+| `jfg_player_count` | Players in the game | <Status s="planned" /> |
+| `jfg_player_object` | A player's hero object | <Status s="planned" /> |
+| `jfg_player_character` | Which hero a player is | <Status s="planned" /> |
+| `jfg_player_get_pos`, `jfg_player_set_pos` | Where a hero is; teleport | <Status s="planned" /> |
+| `jfg_player_get_health`, `jfg_player_set_health` | Health and maximum | <Status s="planned" /> |
+| `jfg_player_set_invincible` | No damage for a while | <Status s="planned" /> |
+| `jfg_player_get_fuel`, `jfg_player_set_fuel` | Jetpack fuel | <Status s="planned" /> |
+| `jfg_player_set_speed` | Run speed multiplier | <Status s="planned" /> |
+| `jfg_player_set_body` | Play as another body | <Status s="planned" /> |
+| `jfg_player_freeze` | Stop player control (scenes) | <Status s="planned" /> |
+| `jfg_on_player_damaged`, `jfg_on_player_died`, `jfg_on_player_respawn` | A hero hurt, killed, back | <Status s="planned" /> |
+| `jfg_on_character_change` | The player switched hero | <Status s="planned" /> |
+| `jfg_input_pressed`, `jfg_input_held`, `jfg_input_stick` | Buttons and stick | <Status s="planned" /> |
+| `jfg_on_input` | Change or block the controller each tick | <Status s="planned" /> |
+| `jfg_input_rumble` | Rumble | <Status s="planned" /> |
+
+## Who is playing
+
+### jfg_player_count, jfg_player_object, jfg_player_character <Status s="planned" />
+
+```c
+/**
+ * @brief  Players in the game, a player's hero object, and which hero they play.
+ * @param  player  Player index, 0-3.
+ * @return count: 1 in the story, 2-4 in multiplayer. object: NULL if there's no such player.
+ *         character: 0 Vela, 1 Juno, 2 Lupus; -1 for none.
+ * @target 4
+ */
+int        jfg_player_count(void);
+JfgObject* jfg_player_object(int player);
+int        jfg_player_character(int player);
+```
+
+### jfg_on_character_change <Status s="planned" />
+
+```c
+/**
+ * @brief  The hero played changed: a new hero starts a level, or the story switched hero.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_character_change) void my_hero(int player, int from, int to);
+```
+
+## Position
+
+### jfg_player_get_pos, jfg_player_set_pos <Status s="planned" />
+
+```c
+/**
+ * @brief  A hero's position, or a teleport to a new one.
+ * @param  yaw  Facing after the teleport, in game units (65536 a full turn); -1 keeps it.
+ * @target 4
+ * @lua    jfg.player() -> x, y, z  (built, player 0)
+ * @note   A teleport also moves the camera; it doesn't check walls. Teleport onto ground you know.
+ */
+void jfg_player_get_pos(int player, JfgVec3* out);
+void jfg_player_set_pos(int player, const JfgVec3* pos, int yaw);
+```
+
+## Health and abilities
+
+### jfg_player_get_health, jfg_player_set_health <Status s="planned" />
+
+```c
+/**
+ * @brief  A hero's health and its maximum.
+ * @param  health  0-max. Setting 0 kills the hero as damage would.
+ * @param  max     -1 keeps the maximum.
+ * @target 4
+ */
+int  jfg_player_get_health(int player, int* max);
+void jfg_player_set_health(int player, int health, int max);
+```
+
+### jfg_player_set_invincible <Status s="planned" />
+
+```c
+/**
+ * @brief  The hero takes no damage for a while, as after a hit.
+ * @param  frames  0 ends it; -1 until turned off.
+ * @target 5
+ */
+void jfg_player_set_invincible(int player, int frames);
+```
+
+### jfg_player_get_fuel, jfg_player_set_fuel <Status s="planned" />
+
+```c
+/**
+ * @brief  Jetpack fuel, 0.0 to 1.0. Has an effect only when the hero has the jetpack.
+ * @target 4
+ */
+float jfg_player_get_fuel(int player);
+void  jfg_player_set_fuel(int player, float fuel);
+```
+
+### jfg_player_set_speed <Status s="planned" />
+
+```c
+/**
+ * @brief  Multiplies how fast a hero runs and strafes.
+ * @param  scale  1.0 normal; 0.25 to 4.0.
+ * @target 5
+ */
+void jfg_player_set_speed(int player, float scale);
+```
+
+### jfg_player_set_body <Status s="planned" />
+
+```c
+/**
+ * @brief  Plays the rest of this level with another body: a stock hero object id or a pack object type.
+ * @param  body  Object type (jfg_find("objtype/<name>")); -1 restores the hero's own.
+ * @target 5
+ * @note   Per level, packs can do the same without code with "playerBodies" in jfg_assets.json (built).
+ *         The body needs the hero's joints and animations to look right.
+ */
+void jfg_player_set_body(int player, int body);
+```
+
+### jfg_player_freeze <Status s="planned" />
+
+```c
+/**
+ * @brief  Stops or gives back control of a hero, for scripted scenes. The hero stands still and can't be hurt
+ *         while frozen.
+ * @target 4
+ */
+void jfg_player_freeze(int player, int frozen);
+```
+
+## Player events
+
+### jfg_on_player_damaged <Status s="planned" />
+
+```c
+/** @brief A hero is about to take damage. */
+typedef struct {
+    int        player;
+    JfgObject* source;  ///< What hit them: a projectile, an enemy, NULL for the world (lava, falls)
+    int        amount;  ///< Health lost; changeable
+    int        cancel;  ///< 1: no damage, no flash
+} JfgPlayerDamage;
+
+/**
+ * @brief  Before a hero loses health.
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_player_damaged) void my_hurt(JfgPlayerDamage* d);
+```
+
+### jfg_on_player_died, jfg_on_player_respawn <Status s="planned" />
+
+```c
+/**
+ * @brief  A hero died; a hero came back (after a death, at a checkpoint or start point).
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_player_died)    void my_died(int player, JfgObject* killer);
+RECOMP_CALLBACK("*", jfg_on_player_respawn) void my_back(int player);
+```
+
+### jfg_on_boss_fight_control <Status s="built" />
+
+```c
+/**
+ * @brief  Each tick the player is controlled in a boss fight, before the game's control code runs.
+ * @param  player     The player's object.
+ * @param  frames     Video frames the tick covers.
+ * @param  character  0 Vela, 1 Juno, 2 Lupus.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_boss_fight_control) void my_boss(void* player, int frames, int character);
+```
+
+## Floyd
+
+### jfg_on_sidekick_tick <Status s="built" />
+
+```c
+/**
+ * @brief  Each tick Floyd is updated, before the game's code for him.
+ * @param  floyd   Floyd's object.
+ * @param  frames  Video frames the tick covers.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_sidekick_tick) void my_floyd(void* floyd, int frames);
+```
+
+## Input
+
+Buttons are the N64's, whatever the player's controls map to them.
+
+```c
+/** @brief Buttons, as bits. */
+enum {
+    JFG_BTN_A = 0x8000, JFG_BTN_B = 0x4000, JFG_BTN_Z = 0x2000, JFG_BTN_START = 0x1000,
+    JFG_BTN_DUP = 0x0800, JFG_BTN_DDOWN = 0x0400, JFG_BTN_DLEFT = 0x0200, JFG_BTN_DRIGHT = 0x0100,
+    JFG_BTN_L = 0x0020, JFG_BTN_R = 0x0010,
+    JFG_BTN_CUP = 0x0008, JFG_BTN_CDOWN = 0x0004, JFG_BTN_CLEFT = 0x0002, JFG_BTN_CRIGHT = 0x0001,
+};
+```
+
+### jfg_input_pressed, jfg_input_held, jfg_input_stick <Status s="planned" />
+
+```c
+/**
+ * @brief  Buttons pressed this tick, buttons down, and the stick.
+ * @param  buttons  One or more JFG_BTN_ bits; pressed and held answer 1 if any of them is.
+ * @param  x, y     Stick, -80 to 80 as the N64 reports it.
+ * @target 4
+ * @lua    jfg.pressed(name), jfg.held(name)  (built)
+ */
+int  jfg_input_pressed(int player, int buttons);
+int  jfg_input_held(int player, int buttons);
+void jfg_input_stick(int player, int* x, int* y);
+```
+
+### jfg_on_input <Status s="planned" />
+
+```c
+/** @brief A controller's state, before the game reads it. */
+typedef struct {
+    int player;
+    int buttons;   ///< JFG_BTN_ bits held; changeable
+    int stick_x;   ///< Changeable
+    int stick_y;   ///< Changeable
+} JfgInput;
+
+/**
+ * @brief  Each tick, before the game reads the controller: remap, block or press buttons for the player.
+ * @target 4
+ * @note   Menus read the controller too; check jfg_game_mode if you only mean play.
+ */
+RECOMP_CALLBACK("*", jfg_on_input) void my_input(JfgInput* in);
+```
+
+### jfg_input_rumble <Status s="planned" />
+
+```c
+/**
+ * @brief  Rumbles the player's controller.
+ * @param  strength  0.0 to 1.0.
+ * @param  frames    How long.
+ * @target 5
+ */
+void jfg_input_rumble(int player, float strength, int frames);
+```

@@ -1,0 +1,338 @@
+---
+title: 'C API: Levels'
+description: Level events and helpers of the Jet Force Gemini Recompiled C mod API - changing level, load and unload events, fog, sky, colours, name, start points, exits and triggers.
+---
+
+# Levels
+
+Knowing which level is played, moving between levels, and changing how a level looks while it runs: fog, sky,
+background colour, lighting, its name. Exits and trigger zones are here too.
+
+A level's starting look comes from its header (Studio's Level window). These helpers change it at run time, for the
+current visit; the next load starts from the header again.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_get_level` | The current level number | <Status s="built" /> |
+| `jfg_on_level_change` | The game starts changing level | <Status s="built" /> |
+| `jfg_on_level_loaded` | The level's objects are set up; first tick in it | <Status s="planned" /> |
+| `jfg_on_level_unload` | The level is about to be freed | <Status s="planned" /> |
+| `jfg_level_change` | Go to a level and start point | <Status s="planned" /> |
+| `jfg_level_restart` | Reload the level from its last start point | <Status s="planned" /> |
+| `jfg_level_start_point` | The start point the player came in at | <Status s="planned" /> |
+| `jfg_level_name`, `jfg_level_set_name` | The level's display name | <Status s="planned" /> |
+| `jfg_level_get_fog`, `jfg_level_set_fog` | Fog colour and range, with a fade | <Status s="planned" /> |
+| `jfg_level_set_sky` | Switch the sky | <Status s="planned" /> |
+| `jfg_level_set_clear_color` | The background colour behind the sky | <Status s="planned" /> |
+| `jfg_level_set_light` | Ambient light colour and strength | <Status s="planned" /> |
+| `jfg_level_set_music` | The level's stock tune | <Status s="planned" /> |
+| `jfg_level_set_gravity` | Gravity for heroes and objects | <Status s="planned" /> |
+| `jfg_level_set_water` | Raise or lower a water surface | <Status s="planned" /> |
+| `jfg_on_exit_taken` | An exit is about to take the player away | <Status s="planned" /> |
+| `jfg_on_region_change` | The player moved into another region of the level | <Status s="planned" /> |
+| `jfg_trigger_add_box`, `jfg_trigger_add_sphere` | A zone that fires events | <Status s="planned" /> |
+| `jfg_on_trigger` | A player entered or left a zone | <Status s="planned" /> |
+| `jfg_surface_at` | The ground and its type under a point | <Status s="planned" /> |
+
+## Which level
+
+### jfg_get_level <Status s="built" />
+
+```c
+/**
+ * @brief  The current level number.
+ * @since  1
+ * @lua    jfg.level()
+ * @note   Appended levels get their number at start-up: compare with jfg_find("level/<name>").
+ */
+int jfg_get_level(void);
+```
+
+### jfg_level_start_point <Status s="planned" />
+
+```c
+/**
+ * @brief  The start point the player came into this level at (the exit's target, or the warp's).
+ * @target 4
+ */
+int jfg_level_start_point(void);
+```
+
+## Level events
+
+### jfg_on_level_change <Status s="built" />
+
+```c
+/**
+ * @brief  The game starts changing to a level. The old level is still in memory.
+ * @param  level      The level that loads.
+ * @param  character  The hero playing: 0 Vela, 1 Juno, 2 Lupus.
+ * @since  1
+ * @note   Too early to touch the new level's objects; use jfg_on_level_loaded for that.
+ */
+RECOMP_CALLBACK("*", jfg_on_level_change) void my_change(int level, int character);
+```
+
+### jfg_on_level_loaded <Status s="planned" />
+
+```c
+/**
+ * @brief  The first tick in a level, once its objects are set up.
+ * @param  level        The level.
+ * @param  start_point  Where the player came in.
+ * @param  character    The hero playing.
+ * @target 4
+ * @lua    jfg.on("level", fn)  (built)
+ * @note   The place to spawn objects, set fog or music, and start the level's script.
+ */
+RECOMP_CALLBACK("*", jfg_on_level_loaded) void my_loaded(int level, int start_point, int character);
+```
+
+### jfg_on_level_unload <Status s="planned" />
+
+```c
+/**
+ * @brief  The level is about to be freed: its objects still exist.
+ * @param  level       The level being left.
+ * @param  next_level  The level that loads next, or -1 for the title or map.
+ * @target 4
+ * @note   Save what you need from its objects here; pointers to them are invalid afterwards.
+ */
+RECOMP_CALLBACK("*", jfg_on_level_unload) void my_unload(int level, int next_level);
+```
+
+## Moving between levels
+
+### jfg_level_change <Status s="planned" />
+
+```c
+/**
+ * @brief  Goes to a level, as an exit does: the screen fades and the level loads.
+ * @param  level        Level number (jfg_find("level/<name>") for appended ones).
+ * @param  start_point  The start point to arrive at; 0 for the first.
+ * @target 4
+ * @lua    jfg.warp(level, start_point)  (built)
+ */
+void jfg_level_change(int level, int start_point);
+```
+
+### jfg_level_restart <Status s="planned" />
+
+```c
+/**
+ * @brief  Reloads the current level from the start point the player came in at.
+ * @target 4
+ */
+void jfg_level_restart(void);
+```
+
+### jfg_on_exit_taken <Status s="planned" />
+
+```c
+/** @brief An exit is about to take the player to another level. */
+typedef struct {
+    JfgObject* exit;        ///< The exit object, or NULL for a script's jfg_level_change
+    int        level;       ///< Where it goes; changeable
+    int        start_point; ///< Changeable
+    int        cancel;      ///< 1: the player stays (a locked exit)
+} JfgExit;
+
+/**
+ * @brief  Before an exit fires: send the player somewhere else, or keep them here.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_exit_taken) void my_exit(JfgExit* e);
+```
+
+### jfg_on_region_change <Status s="planned" />
+
+```c
+/**
+ * @brief  The player moved into another region of a level (the game resets per-region counts here).
+ * @param  from, to  Region numbers.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_region_change) void my_region(int from, int to);
+```
+
+## Name
+
+### jfg_level_name, jfg_level_set_name <Status s="planned" />
+
+```c
+/**
+ * @brief  The current level's display name, in the language shown; or a new one for this visit.
+ * @param  out, size  Buffer to copy into (0 ended, cut to size).
+ * @param  text       A text handle (jfg_find("text/<name>")), so it can be translated; -1 restores the stock name.
+ * @return jfg_level_name: the length.
+ * @target 4
+ */
+int  jfg_level_name(char* out, int size);
+void jfg_level_set_name(int text);
+```
+
+## Fog, sky, colours and light
+
+All of these change the current visit only, and fade when given `frames` (at 30 fps; 0 for at once).
+
+### jfg_level_get_fog, jfg_level_set_fog <Status s="planned" />
+
+```c
+/** @brief A level's fog. */
+typedef struct {
+    unsigned int color;  ///< 0xRRGGBBAA; alpha unused
+    int near, far;       ///< Depth range in the game's units, 900-1023: where fog starts and where it's solid
+} JfgFog;
+
+/**
+ * @brief  Reads the fog now, or fades it to new values.
+ * @target 4
+ * @lua    jfg.fog(r, g, b, near, far [, ticks])  (built)
+ */
+void jfg_level_get_fog(JfgFog* out);
+void jfg_level_set_fog(const JfgFog* fog, int frames);
+```
+
+### jfg_level_set_sky <Status s="planned" />
+
+```c
+/**
+ * @brief  Switches the level's sky to another sky, as the sky switch object does.
+ * @param  sky     A sky number from the level header's sky choices; -1 for no sky.
+ * @param  frames  Cross-fade time; 0 at once.
+ * @target 4
+ */
+void jfg_level_set_sky(int sky, int frames);
+```
+
+### jfg_level_set_clear_color <Status s="planned" />
+
+```c
+/**
+ * @brief  The colour the screen is cleared to, seen where there is no sky or geometry.
+ * @param  color  0xRRGGBBAA.
+ * @target 4
+ */
+void jfg_level_set_clear_color(unsigned int color, int frames);
+```
+
+### jfg_level_set_light <Status s="planned" />
+
+```c
+/**
+ * @brief  The light objects and heroes get: its colour and the direction it comes from.
+ * @param  ambient    0xRRGGBBAA ambient colour.
+ * @param  direction  Where the main light comes from; NULL keeps it.
+ * @target 5
+ * @note   Level geometry keeps its baked vertex colours; this changes lit models only.
+ */
+void jfg_level_set_light(unsigned int ambient, const JfgVec3* direction, int frames);
+```
+
+### jfg_level_set_music <Status s="planned" />
+
+```c
+/**
+ * @brief  Plays a stock tune as the level's music, as if the header named it.
+ * @param  tune  A stock tune number; -1 for silence.
+ * @target 4
+ * @note   For a pack's own OGG music see jfg_music_play in Music and sound.
+ */
+void jfg_level_set_music(int tune, int frames);
+```
+
+## World rules
+
+### jfg_level_set_gravity <Status s="planned" />
+
+```c
+/**
+ * @brief  Gravity in this level, for the heroes and for objects that fall.
+ * @param  scale  1.0 the game's own, 0.5 half (moon jumps), 0 none.
+ * @target 5
+ */
+void jfg_level_set_gravity(float scale);
+```
+
+### jfg_level_set_water <Status s="planned" />
+
+```c
+/**
+ * @brief  Moves a water surface up or down: flood or drain a room.
+ * @param  water   The water surface's index in the level, from Studio.
+ * @param  height  New height in world units.
+ * @param  frames  Time to move there.
+ * @target 5
+ */
+void jfg_level_set_water(int water, float height, int frames);
+```
+
+### jfg_surface_at <Status s="planned" />
+
+```c
+/** @brief Ground found under a point. */
+typedef struct {
+    float   height;   ///< Its height
+    JfgVec3 normal;   ///< Its slope
+    int     type;     ///< Surface type: ground, water, lava, pit, wall... (as Studio's material names)
+} JfgSurface;
+
+/**
+ * @brief  The first ground under a point.
+ * @return 1 and fills out, 0 if there is nothing under it.
+ * @target 5
+ */
+int jfg_surface_at(const JfgVec3* pos, JfgSurface* out);
+```
+
+## Triggers
+
+Zones the port checks every tick. Studio's Triggers window makes the same zones without code.
+
+### jfg_trigger_add_box, jfg_trigger_add_sphere <Status s="planned" />
+
+```c
+/**
+ * @brief  Adds a zone in the current level.
+ * @param  min, max  Box corners in world units.
+ * @param  centre, radius  Sphere.
+ * @return A trigger handle, or -1. Zones are removed on a level change.
+ * @target 4
+ */
+int  jfg_trigger_add_box(const JfgVec3* min, const JfgVec3* max);
+int  jfg_trigger_add_sphere(const JfgVec3* centre, float radius);
+void jfg_trigger_remove(int trigger);
+```
+
+### jfg_on_trigger <Status s="planned" />
+
+```c
+/**
+ * @brief  A player entered or left a zone.
+ * @param  trigger  Its handle.
+ * @param  player   Player index.
+ * @param  entered  1 entered, 0 left.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_trigger) void my_trigger(int trigger, int player, int entered);
+```
+
+## Example: a storm rolls in
+
+```c
+static int storm_zone;
+
+RECOMP_CALLBACK("*", jfg_on_level_loaded) void setup(int level, int start, int character) {
+    if (level != jfg_find("level/cliffs")) return;
+    JfgVec3 lo = { -500, 0, 1800 }, hi = { 500, 400, 2400 };
+    storm_zone = jfg_trigger_add_box(&lo, &hi);
+}
+
+RECOMP_CALLBACK("*", jfg_on_trigger) void storm(int trigger, int player, int entered) {
+    if (trigger != storm_zone || !entered) return;
+    JfgFog fog = { 0x404858FF, 960, 1000 };
+    jfg_level_set_fog(&fog, 120);
+    jfg_level_set_sky(1, 120);
+    jfg_sound_play(jfg_find("sound/thunder"), NULL, 1.0f);
+}
+```

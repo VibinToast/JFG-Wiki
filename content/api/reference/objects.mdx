@@ -1,0 +1,323 @@
+---
+title: 'C API: Objects'
+description: Spawning, freeing, moving, animating and finding game objects, and object events, in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Objects
+
+Everything in a level that isn't the level's geometry is an object: enemies, props, pickups, doors, projectiles, the
+heroes. These helpers work on any object, stock or custom. To give an object **behaviour of its own**, see
+[Custom enemies (kinds)](/api/reference/kinds).
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_object_draw` | An object is about to be drawn | <Status s="built" /> |
+| `jfg_object_spawn` | Create an object | <Status s="partial" /> |
+| `jfg_object_free` | Remove an object | <Status s="planned" /> |
+| `jfg_object_type`, `jfg_object_kind` | What an object is | <Status s="planned" /> |
+| `jfg_object_get_pos`, `jfg_object_set_pos` | Position | <Status s="planned" /> |
+| `jfg_object_get_yaw`, `jfg_object_set_yaw`, `jfg_object_face` | Facing | <Status s="planned" /> |
+| `jfg_object_get_scale`, `jfg_object_set_scale` | Size | <Status s="planned" /> |
+| `jfg_object_get_vel`, `jfg_object_set_vel`, `jfg_object_push` | Movement | <Status s="planned" /> |
+| `jfg_object_move_to` | Walk or fly to a point | <Status s="planned" /> |
+| `jfg_object_play_anim`, `jfg_object_anim` | Animation | <Status s="planned" /> |
+| `jfg_object_attach_point` | A joint's position (hands, muzzle) | <Status s="planned" /> |
+| `jfg_object_set_visible`, `jfg_object_set_solid` | Hide, make passable | <Status s="planned" /> |
+| `jfg_object_params` | The bytes it was placed with | <Status s="planned" /> |
+| `jfg_object_parent`, `jfg_object_attach` | Attach to another object | <Status s="planned" /> |
+| `jfg_objects_near`, `jfg_objects_of_type`, `jfg_object_nearest` | Find objects | <Status s="planned" /> |
+| `jfg_object_can_see` | Line of sight | <Status s="planned" /> |
+| `jfg_object_is_valid` | Whether a pointer is still a live object | <Status s="planned" /> |
+| `jfg_on_object_spawned`, `jfg_on_object_freed` | Made, removed | <Status s="planned" /> |
+| `jfg_on_object_interact` | A player pressed the action button at it | <Status s="planned" /> |
+| `jfg_on_object_touch` | A player walked into it | <Status s="planned" /> |
+
+<Callout type="warning">
+**Object pointers die with their object.** Don't keep a `JfgObject*` past `jfg_on_object_freed` or a level change.
+Check `jfg_object_is_valid` if you held one across ticks.
+</Callout>
+
+## Making and removing
+
+### jfg_object_spawn <Status s="partial" />
+
+```c
+/**
+ * @brief  Creates an object as if it were in the level's object list.
+ * @param  type    Object type: stock number, or jfg_find("objtype/<name>") / ("kind/<name>").
+ * @param  pos     Position.
+ * @param  yaw     Facing, game units.
+ * @param  params  The type's placement bytes (from entry offset 0x0A), or NULL for zeros.
+ * @return The object, or NULL (bad type, no room, memory full).
+ * @target 5
+ * @lua    jfg.spawn(id, x, y, z [, bytes])  (built: 64 per level)
+ * @note   Spawned objects aren't saved and are gone when the level changes. Squad enemies need their squad:
+ *         use jfg_squad_spawn.
+ */
+JfgObject* jfg_object_spawn(int type, const JfgVec3* pos, int yaw, const void* params, int params_size);
+```
+
+### jfg_object_free <Status s="planned" />
+
+```c
+/**
+ * @brief  Removes an object at the end of this tick, as the game removes a dead one.
+ * @param  effect  1: with its death effect (burst, explosion), 0: just vanish.
+ * @target 5
+ */
+void jfg_object_free(JfgObject* obj, int effect);
+```
+
+### jfg_object_is_valid <Status s="planned" />
+
+```c
+/**
+ * @brief  Whether obj is still a live object of the current level.
+ * @target 5
+ */
+int jfg_object_is_valid(JfgObject* obj);
+```
+
+## What it is
+
+### jfg_object_type, jfg_object_kind <Status s="planned" />
+
+```c
+/**
+ * @brief  An object's type number (its object-list id) and, for a custom kind, its kind handle.
+ * @return type: the number; kind: the handle, or -1 for a stock object.
+ * @target 5
+ */
+int jfg_object_type(JfgObject* obj);
+int jfg_object_kind(JfgObject* obj);
+```
+
+### jfg_object_params <Status s="planned" />
+
+```c
+/**
+ * @brief  The placement bytes the object was made with (Studio's per-placement fields), from entry offset 0x0A.
+ * @param  size  Set to their count.
+ * @target 5
+ */
+const unsigned char* jfg_object_params(JfgObject* obj, int* size);
+```
+
+## Transform
+
+### jfg_object_get_pos, jfg_object_set_pos <Status s="planned" />
+
+```c
+/**
+ * @brief  Position in world units.
+ * @target 5
+ */
+void jfg_object_get_pos(JfgObject* obj, JfgVec3* out);
+void jfg_object_set_pos(JfgObject* obj, const JfgVec3* pos);
+```
+
+### jfg_object_get_yaw, jfg_object_set_yaw, jfg_object_face <Status s="planned" />
+
+```c
+/**
+ * @brief  Facing in game units (65536 a full turn); face turns it toward a point at a turn speed.
+ * @param  turn  Game units per tick; 0 at once.
+ * @target 5
+ */
+int  jfg_object_get_yaw(JfgObject* obj);
+void jfg_object_set_yaw(JfgObject* obj, int yaw);
+void jfg_object_face(JfgObject* obj, const JfgVec3* target, int turn);
+```
+
+### jfg_object_get_scale, jfg_object_set_scale <Status s="planned" />
+
+```c
+/**
+ * @brief  Size, 1.0 as placed. Changes the model and its hit area.
+ * @target 5
+ */
+float jfg_object_get_scale(JfgObject* obj);
+void  jfg_object_set_scale(JfgObject* obj, float scale);
+```
+
+## Movement
+
+### jfg_object_get_vel, jfg_object_set_vel, jfg_object_push <Status s="planned" />
+
+```c
+/**
+ * @brief  Velocity in world units per tick; push adds to it for a number of ticks (knockback, wind, water).
+ * @target 5
+ * @note   Works on objects that move by velocity. Squad members move through the squad code: push works on
+ *         them too, through their own movement.
+ */
+void jfg_object_get_vel(JfgObject* obj, JfgVec3* out);
+void jfg_object_set_vel(JfgObject* obj, const JfgVec3* vel);
+void jfg_object_push(JfgObject* obj, const JfgVec3* vel, int ticks);
+```
+
+### jfg_object_move_to <Status s="planned" />
+
+```c
+/**
+ * @brief  Moves an object to a point at a speed, along the ground (walkers) or straight (flyers).
+ * @param  speed  World units per tick.
+ * @return 1 when there, 0 while moving. Call each tick.
+ * @target 6
+ */
+int jfg_object_move_to(JfgObject* obj, const JfgVec3* target, float speed);
+```
+
+## Animation and joints
+
+### jfg_object_play_anim, jfg_object_anim <Status s="planned" />
+
+```c
+/**
+ * @brief  Plays one of the model's animations, and reads where it is.
+ * @param  anim   Index in the model's animation list.
+ * @param  speed  1.0 normal.
+ * @param  loop   1 loops, 0 holds the last frame.
+ * @param  frame  Out: the current frame. Returns the animation playing, -1 for none.
+ * @target 5
+ */
+void jfg_object_play_anim(JfgObject* obj, int anim, float speed, int loop);
+int  jfg_object_anim(JfgObject* obj, float* frame);
+```
+
+### jfg_object_attach_point <Status s="planned" />
+
+```c
+/**
+ * @brief  Where one of the model's attach points is now, posed (a hand, a gun's muzzle, a head).
+ * @return 1 and fills out, 0 if the model has no such point.
+ * @target 5
+ */
+int jfg_object_attach_point(JfgObject* obj, int index, JfgVec3* out);
+```
+
+### jfg_object_parent, jfg_object_attach <Status s="planned" />
+
+```c
+/**
+ * @brief  Attaches an object to another's attach point (a hat, a carried crate); NULL parent detaches.
+ * @target 5
+ */
+JfgObject* jfg_object_parent(JfgObject* obj);
+void       jfg_object_attach(JfgObject* obj, JfgObject* parent, int point);
+```
+
+## Visibility and collision
+
+### jfg_object_set_visible, jfg_object_set_solid <Status s="planned" />
+
+```c
+/**
+ * @brief  Hides an object (it still runs), or lets heroes and shots pass through it.
+ * @target 5
+ * @note   To hide an object only for one frame, cancel jfg_on_object_draw (built).
+ */
+void jfg_object_set_visible(JfgObject* obj, int visible);
+void jfg_object_set_solid(JfgObject* obj, int solid);
+```
+
+## Finding objects
+
+### jfg_objects_near, jfg_objects_of_type, jfg_object_nearest <Status s="planned" />
+
+```c
+/** @brief Filters for finding objects; combine with |. */
+enum {
+    JFG_FIND_ANY      = 0,
+    JFG_FIND_ENEMY    = 1,   ///< Squad members, bosses, enemy kinds
+    JFG_FIND_SHOOTABLE = 2,  ///< Has health
+    JFG_FIND_PICKUP   = 4,
+    JFG_FIND_PLAYER   = 8,
+    JFG_FIND_PROJECTILE = 16,
+};
+
+/**
+ * @brief  Objects within a radius; every object of one type; the nearest that matches.
+ * @param  out, max  Array to fill.
+ * @return How many were found (up to max). nearest: NULL for none.
+ * @target 5
+ */
+int        jfg_objects_near(const JfgVec3* pos, float radius, int filter, JfgObject** out, int max);
+int        jfg_objects_of_type(int type, JfgObject** out, int max);
+JfgObject* jfg_object_nearest(const JfgVec3* pos, float radius, int filter);
+```
+
+### jfg_object_can_see <Status s="planned" />
+
+```c
+/**
+ * @brief  Whether a straight line from an object's eyes to a point is free of level geometry.
+ * @target 5
+ */
+int jfg_object_can_see(JfgObject* obj, const JfgVec3* target);
+```
+
+## Events
+
+### jfg_on_object_draw <Status s="built" />
+
+```c
+/** @brief An object about to be drawn. */
+typedef struct {
+    void* object;
+    int   cancel;   ///< 1: draw nothing for it this frame
+} JfgObjectDraw;
+
+/**
+ * @brief  An object is about to be drawn, after the game's own options (Hide Floyd) applied.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_object_draw) void my_draw(JfgObjectDraw* d);
+```
+
+### jfg_on_object_spawned, jfg_on_object_freed <Status s="planned" />
+
+```c
+/**
+ * @brief  An object was set up (from the level's list, a squad, a projectile, a spawn), or is about to be
+ *         removed.
+ * @param  type  Its type number.
+ * @target 5
+ * @note   The most common events in the game: keep them short. Check the type first.
+ */
+RECOMP_CALLBACK("*", jfg_on_object_spawned) void my_spawned(JfgObject* obj, int type);
+RECOMP_CALLBACK("*", jfg_on_object_freed)   void my_freed(JfgObject* obj);
+```
+
+### jfg_on_object_interact, jfg_on_object_touch <Status s="planned" />
+
+```c
+/**
+ * @brief  A player pressed the action button next to an object, or walked into it.
+ * @target 5
+ * @note   interact fires for objects that take the action button (talkers, chests, switches, interactive
+ *         kinds); touch for any solid object or pickup.
+ */
+RECOMP_CALLBACK("*", jfg_on_object_interact) void my_interact(JfgObject* obj, int player);
+RECOMP_CALLBACK("*", jfg_on_object_touch)    void my_touch(JfgObject* obj, int player);
+```
+
+## Example: statues that watch the player
+
+```c
+static int statue;   // a prop type this pack appends
+
+RECOMP_CALLBACK("*", jfg_on_register) void setup(void) {
+    statue = jfg_find("objtype/statue");
+}
+
+RECOMP_CALLBACK("*", jfg_on_game_tick) void watch(int frames) {
+    JfgObject* found[16];
+    JfgVec3 hero;
+    jfg_player_get_pos(0, &hero);
+    int n = jfg_objects_of_type(statue, found, 16);
+    for (int i = 0; i < n; i++) {
+        jfg_object_face(found[i], &hero, 512);
+    }
+}
+```

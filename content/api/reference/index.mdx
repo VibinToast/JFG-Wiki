@@ -1,0 +1,109 @@
+---
+title: C API reference
+description: Function-by-function reference of jfg_api.h, the C mod API of Jet Force Gemini Recompiled, today's and planned versions, grouped by area.
+---
+
+# C API reference (`jfg_api.h`)
+
+Every helper, event and struct of the C mod API, grouped by area: what exists today (API version 3) and what's
+planned. For building a code mod, hooks and patches, see [C mod API](/api/c); for the Lua side, [Lua scripting](/api/lua).
+
+<Legend />
+
+<Callout type="warning">
+**Planned entries are a design, not a promise.** Names, arguments and the version they land in can change until they
+are built. Only <Status s="built" /> entries are in the header you compile against. Check `jfg_api_version()` before
+calling anything newer than version 3.
+</Callout>
+
+## Areas
+
+<Cards>
+  <Cards.Card title="Core: version, registration, names, logging" href="/api/reference/core" arrow />
+  <Cards.Card title="Game loop: ticks, frame rate, pause, game modes" href="/api/reference/game-loop" arrow />
+  <Cards.Card title="World map: planets, galaxies, choosing a world" href="/api/reference/world" arrow />
+  <Cards.Card title="Levels: changing, fog, sky, name, exits, triggers" href="/api/reference/level" arrow />
+  <Cards.Card title="Players and input: heroes, health, buttons" href="/api/reference/player" arrow />
+  <Cards.Card title="Weapons: stats, ammo, new weapons, fire events" href="/api/reference/weapons" arrow />
+  <Cards.Card title="Objects: spawn, move, animate, find" href="/api/reference/objects" arrow />
+  <Cards.Card title="Custom enemies and objects: kinds" href="/api/reference/kinds" arrow />
+  <Cards.Card title="Combat: health, hits, damage, deaths" href="/api/reference/combat" arrow />
+  <Cards.Card title="Squads and AI: members, targets, attacks" href="/api/reference/squads" arrow />
+  <Cards.Card title="Items and progress: pickups, keys, flags, doors, saves" href="/api/reference/progress" arrow />
+  <Cards.Card title="Camera" href="/api/reference/camera" arrow />
+  <Cards.Card title="Text, HUD and menus" href="/api/reference/ui" arrow />
+  <Cards.Card title="Music and sound" href="/api/reference/audio" arrow />
+  <Cards.Card title="Effects: blood, flashes, particles, lights" href="/api/reference/effects" arrow />
+  <Cards.Card title="Drawing: models, textures, draw hooks" href="/api/reference/drawing" arrow />
+</Cards>
+
+## How to read an entry
+
+Each entry is written as a Doxygen comment over its declaration:
+
+```c
+/**
+ * @brief  What it does, in one line.
+ * @param  name   What the argument means, with its unit or range.
+ * @return What comes back; -1 or NULL when it fails.
+ * @since  3          (built: the API version that added it)
+ * @target 4          (planned: the version it's meant for)
+ * @lua    jfg.name() (the Lua form, when there is one)
+ * @note   Limits, timing, what to watch out for.
+ */
+int jfg_example(const char* name);
+```
+
+Helpers are imported from the game (`RECOMP_IMPORT("*", ...)`, done for you by the header). Events are listened to
+with `RECOMP_CALLBACK("*", event_name)`.
+
+## Conventions
+
+These hold for every area, built and planned.
+
+| Topic | Rule |
+|---|---|
+| Names | Everything starts with `jfg_`, then the area: `jfg_level_`, `jfg_weapon_`, `jfg_object_`... Events start with `jfg_on_`. Helpers from versions 1-3 keep their original names (`jfg_get_level`) |
+| Stable | A released helper, event or struct never changes. New fields go at the end of a struct and come with a higher `JFG_API_VERSION` |
+| Events with values | The payload is a struct you can change. Set `cancel` to 1 to stop the game's action. The port's own features run first, then mods in Mods-list order; the last mod has the final say |
+| Game objects | `JfgObject*`: the game's own object, opaque. Use the helpers, not raw offsets. Events from versions 1-3 pass the same pointer as `void*` |
+| Things the API makes | Weapons, kinds, sounds, music, triggers, text and UI elements are `int` handles. -1 means none or failed |
+| Content names | `"<mod id>:<type>/<name>"`, such as `"yourname_pack:kind/fire_ant"`. A name without a mod id is your own mod's. Stock content is `"stock:<type>/<number>"` |
+| Registering | Kinds, weapons, sounds and music are registered in `jfg_on_register`, which fires once after mods load. Registering later returns -1 |
+| Frame rate | Tick events pass `frames` (2 at 30 fps, 1 at 60). Values "per tick" or "in frames" are at 30 fps; the port scales them. Multiply your own per-tick changes by `jfg_get_tick_scale()` |
+| Units | Positions in the game's world units (`JfgVec3`, floats). Angles in game units: 65536 is a full turn. Colours `0xRRGGBBAA` |
+| Heroes | Character 0 Vela, 1 Juno, 2 Lupus. Player index 0 is the story player; 1-3 exist in multiplayer |
+| Threads | Everything runs on the game thread, between or inside the game's ticks. Don't block |
+
+### Shared types
+
+```c
+/** @brief A position or direction in world units. */
+typedef struct { float x, y, z; } JfgVec3;
+
+/** @brief A game object: enemy, prop, pickup, hero. Opaque: use the helpers. */
+typedef struct JfgObject JfgObject;
+
+/** @brief Characters, as events and helpers pass them. */
+enum { JFG_VELA = 0, JFG_JUNO = 1, JFG_LUPUS = 2 };
+```
+
+<Status s="planned" /> `JfgVec3` and `JfgObject` arrive with version 4; versions 1-3 pass `float x, y, z` and `void*`.
+
+## Version roadmap
+
+Proposed, in the order the port's work is planned. Planned entries carry their `@target` version.
+
+| Version | Theme | Main additions | Status |
+|---|---|---|---|
+| 1 | First API | Tick, level change, tick scale, blood, sound, flash, object draw, boss fights, Floyd | <Status s="built" /> |
+| 2 | Language | `jfg_get_language`, `jfg_on_language_change` | <Status s="built" /> |
+| 3 | Planets | `jfg_world_*`, `jfg_galaxy_*`, map open, galaxy change, planet select | <Status s="built" /> |
+| 4 | Foundations | `jfg_on_register`, names and handles, level events and helpers (fog, sky, name, exits, triggers), world enter and leave, map cursor, players and input, flags, doors, save data, text lines, weapon stats in C, overlay addresses, the public field header | <Status s="planned" /> |
+| 5 | Objects and combat | Spawn and free, transforms, animation, finding objects, health and hits, damage and death events, projectiles, effects | <Status s="planned" /> |
+| 6 | Custom kinds | `jfg_kind_register` with callbacks, per-placement fields for Studio, behaviour overrides | <Status s="planned" /> |
+| 7 | Squads and AI | Squad members, targets, attacks, new squad types | <Status s="planned" /> |
+| 8 | Weapons | `jfg_weapon_register`, virtual slots, giving and ammo, fire and hit events | <Status s="planned" /> |
+| 9 | Presentation | Scripted camera, HUD bars, UI panels, pack sounds and music in C, positional sounds | <Status s="planned" /> |
+
+Each version is tested with a test mod that calls every new entry, at Game 30 and Game 60.

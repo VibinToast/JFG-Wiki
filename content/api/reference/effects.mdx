@@ -1,0 +1,164 @@
+---
+title: 'C API: Effects'
+description: Blood, severed limbs, screen flashes and fades, particle effects and lights in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Effects
+
+Blood and gore, flashes and fades over the screen, the game's particle effects, and lights.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_blood_spurt` | Blood drops are about to be added | <Status s="built" /> |
+| `jfg_on_blood_hit` | A blood hit sprite | <Status s="built" /> |
+| `jfg_on_severed_limb_tick` | Each tick of a severed body part | <Status s="built" /> |
+| `jfg_on_screen_flash` | The red hit flash | <Status s="built" /> |
+| `jfg_screen_flash` | Flash the screen a colour | <Status s="planned" /> |
+| `jfg_screen_fade` | Fade to or from a colour | <Status s="planned" /> |
+| `jfg_fx_spawn` | One of the game's effects at a place | <Status s="planned" /> |
+| `jfg_on_fx_spawn` | The game is about to make an effect | <Status s="planned" /> |
+| `jfg_light_add` | A light that colours nearby models | <Status s="planned" /> |
+| `jfg_blood_spawn` | Blood from code | <Status s="planned" /> |
+
+## Blood and gore
+
+### jfg_on_blood_spurt <Status s="built" />
+
+```c
+/** @brief A spurt of blood drops. */
+typedef struct {
+    float x, y, z;     ///< Where
+    float vx, vy, vz;  ///< Velocity
+    int   alpha;
+    int   count;
+    float scale;
+    int   amount;      ///< Drops in percent: 100 the game's own, 200 twice as many (the extra ones spread a little)
+    int   cancel;      ///< 1: drop it
+} JfgBloodSpurt;
+
+/**
+ * @brief  Blood drops are about to be added, after the game's options (No blood, Blood amount).
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_blood_spurt) void my_blood(JfgBloodSpurt* b);
+```
+
+### jfg_on_blood_hit <Status s="built" />
+
+```c
+/** @brief A blood hit sprite. */
+typedef struct {
+    float x, y, z;
+    int   cancel;  ///< 1: drop it
+} JfgBloodHit;
+
+/**
+ * @brief  A blood hit sprite is about to be added.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_blood_hit) void my_hit(JfgBloodHit* h);
+```
+
+### jfg_on_severed_limb_tick <Status s="built" />
+
+```c
+/**
+ * @brief  Each tick a severed body part (an object) is updated, before the game's code for it.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_severed_limb_tick) void my_limb(void* limb, int frames);
+```
+
+### jfg_blood_spawn <Status s="planned" />
+
+```c
+/**
+ * @brief  A spurt of blood from code; the player's blood options apply.
+ * @param  color  0xRRGGBBAA; 0 for the game's own colour.
+ * @target 5
+ */
+void jfg_blood_spawn(const JfgVec3* pos, const JfgVec3* vel, int count, unsigned int color);
+```
+
+## Screen
+
+### jfg_on_screen_flash <Status s="built" />
+
+```c
+/** @brief A screen flash. */
+typedef struct {
+    unsigned int color;  ///< RGBA; changeable
+    int          cancel;
+} JfgScreenFlash;
+
+/**
+ * @brief  The screen is about to flash (the red hit flash), after the Hit flash opacity option.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_screen_flash) void my_flash(JfgScreenFlash* f);
+```
+
+### jfg_screen_flash, jfg_screen_fade <Status s="planned" />
+
+```c
+/**
+ * @brief  Flashes the screen a colour (it fades back); fades to a colour and holds, or back from it.
+ * @param  to  1 fade to the colour, 0 fade back to the game.
+ * @target 5
+ * @note   Flashes follow the player's Hit flash opacity option.
+ */
+void jfg_screen_flash(unsigned int color, int frames);
+void jfg_screen_fade(unsigned int color, int to, int frames);
+```
+
+## Effects and lights
+
+### jfg_fx_spawn <Status s="planned" />
+
+```c
+/** @brief Some of the game's effects. */
+typedef enum {
+    JFG_FX_EXPLOSION_SMALL, JFG_FX_EXPLOSION_LARGE, JFG_FX_SPARKS, JFG_FX_SMOKE, JFG_FX_SPLASH,
+    JFG_FX_GOO_BURST, JFG_FX_DUST, JFG_FX_FIRE, JFG_FX_TELEPORT,
+} JfgFx;
+
+/**
+ * @brief  One of the game's effects at a place, or on an object (it follows it).
+ * @param  pos  Where, or NULL with obj.
+ * @target 5
+ */
+void jfg_fx_spawn(JfgFx fx, const JfgVec3* pos, JfgObject* obj);
+```
+
+### jfg_on_fx_spawn <Status s="planned" />
+
+```c
+/** @brief An effect about to be made. */
+typedef struct {
+    int     fx;      ///< The game's effect number; changeable
+    JfgVec3 pos;     ///< Changeable
+    float   scale;   ///< Changeable
+    int     cancel;
+} JfgFxSpawn;
+
+/**
+ * @brief  The game is about to make an effect.
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_fx_spawn) void my_fx(JfgFxSpawn* f);
+```
+
+### jfg_light_add <Status s="planned" />
+
+```c
+/**
+ * @brief  A point light that colours models near it (muzzle flashes, glowing kinds).
+ * @param  obj     An object it follows, or NULL to stay at pos.
+ * @param  radius  World units.
+ * @param  frames  How long; -1 until removed (jfg_light_remove) or the level changes.
+ * @return A handle, or -1 when the game's lights are all in use.
+ * @target 5
+ */
+int  jfg_light_add(const JfgVec3* pos, JfgObject* obj, unsigned int color, float radius, int frames);
+void jfg_light_remove(int light);
+```

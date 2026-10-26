@@ -1,0 +1,163 @@
+---
+title: 'C API: Music and sound'
+description: Sound effects, pack sounds, positional sounds, stock and pack music, and sound events in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Music and sound
+
+Sound effects (the game's and a pack's own), sounds placed in the world, and music. Pack audio is mixed by the port
+after the game's own, follows the player's volume settings, and pauses with the game.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_sound_play` | A sound effect is about to start | <Status s="built" /> |
+| `jfg_sound_register` | A pack sound (WAV or OGG) | <Status s="planned" /> |
+| `jfg_sound_play` | Play a stock or pack sound | <Status s="planned" /> |
+| `jfg_sound_stop` | Stop a playing sound | <Status s="planned" /> |
+| `jfg_sound_emitter_add` | A looping sound at a place | <Status s="planned" /> |
+| `jfg_music_register` | A pack music track (OGG, loop points) | <Status s="partial" /> |
+| `jfg_music_play`, `jfg_music_stop` | Play a pack track; back to the level's | <Status s="partial" /> |
+| `jfg_music_play_stock` | Play a stock tune | <Status s="planned" /> |
+| `jfg_music_set_volume` | Duck or fade the music | <Status s="planned" /> |
+| `jfg_on_music_change` | The game is about to change tune | <Status s="planned" /> |
+| `jfg_jingle_play` | A short stock jingle over the music | <Status s="planned" /> |
+
+## Sound effects
+
+### jfg_on_sound_play <Status s="built" />
+
+```c
+/** @brief A sound effect about to start. */
+typedef struct {
+    int id;      ///< The sound; change it to play another
+    int cancel;  ///< 1: play nothing
+} JfgSoundPlay;
+
+/**
+ * @brief  The game is about to start a sound effect.
+ * @since  1
+ */
+RECOMP_CALLBACK("*", jfg_on_sound_play) void my_sound(JfgSoundPlay* s);
+```
+
+### jfg_sound_register <Status s="planned" />
+
+```c
+/**
+ * @brief  Registers a sound file from the pack.
+ * @param  name  "sound/thunder".
+ * @param  file  Path in the .nrm: WAV or OGG.
+ * @return A sound handle (0x10000 and up), or -1.
+ * @target 9
+ * @note   Only in jfg_on_register. Packs can also list sounds in their data, so Studio's triggers can play them.
+ */
+int jfg_sound_register(const char* name, const char* file);
+```
+
+### jfg_sound_play, jfg_sound_stop <Status s="planned" />
+
+```c
+/**
+ * @brief  Plays a sound: a stock sound number (under 0x10000) or a pack handle.
+ * @param  pos     Where it plays from, or NULL for no position (UI sounds).
+ * @param  volume  0.0 to 1.0, before the player's sound volume.
+ * @return A playing-sound handle for jfg_sound_stop, or -1.
+ * @target 5 (stock sounds), 9 (pack sounds)
+ */
+int  jfg_sound_play(int sound, const JfgVec3* pos, float volume);
+void jfg_sound_stop(int playing);
+```
+
+### jfg_sound_emitter_add <Status s="planned" />
+
+```c
+/**
+ * @brief  A looping sound at a place, louder as the player comes near: machines, waterfalls, wind.
+ * @param  radius  How far it's heard, in world units.
+ * @return A handle; removed with jfg_sound_emitter_remove or on a level change.
+ * @target 9
+ */
+int  jfg_sound_emitter_add(int sound, const JfgVec3* pos, float volume, float radius);
+void jfg_sound_emitter_remove(int emitter);
+```
+
+## Music
+
+Custom music is OGG Vorbis with `LOOPSTART` / `LOOPLENGTH` tags for its loop. Packs list tracks in `jfg_music.json`
+and Studio sets one per level; these helpers change it while playing.
+
+### jfg_music_register <Status s="partial" />
+
+```c
+/**
+ * @brief  Registers a pack music track.
+ * @return A music handle, or -1.
+ * @target 9
+ * @note   Today packs register music as data, in jfg_music.json (built); look tracks up with
+ *         jfg_find("music/<name>").
+ */
+int jfg_music_register(const char* name, const char* file);
+```
+
+### jfg_music_play, jfg_music_stop <Status s="partial" />
+
+```c
+/**
+ * @brief  Plays a pack track instead of the level's music; stop brings the level's back.
+ * @param  frames  Fade time.
+ * @target 9
+ * @lua    jfg.music(name), jfg.music_stop()  (built)
+ */
+void jfg_music_play(int music, int frames);
+void jfg_music_stop(int frames);
+```
+
+### jfg_music_play_stock <Status s="planned" />
+
+```c
+/**
+ * @brief  Plays one of the game's tunes.
+ * @param  tune      Stock tune number.
+ * @param  channels  Which of its channels play, as bits; -1 for all (the game layers tunes this way).
+ * @target 5
+ */
+void jfg_music_play_stock(int tune, int channels);
+```
+
+### jfg_music_set_volume <Status s="planned" />
+
+```c
+/**
+ * @brief  The music's volume on top of the player's setting: duck it under a talker, fade it out.
+ * @param  volume  0.0 to 1.0.
+ * @target 9
+ */
+void jfg_music_set_volume(float volume, int frames);
+```
+
+### jfg_on_music_change <Status s="planned" />
+
+```c
+/** @brief A tune change the game is about to make. */
+typedef struct {
+    int tune;      ///< The stock tune; changeable
+    int music;     ///< Set to a pack music handle to play it instead; -1 by default
+    int cancel;    ///< 1: keep what plays now
+} JfgMusicChange;
+
+/**
+ * @brief  The game is about to change the music (a level, a fight starting, a boss).
+ * @target 9
+ */
+RECOMP_CALLBACK("*", jfg_on_music_change) void my_music(JfgMusicChange* m);
+```
+
+### jfg_jingle_play <Status s="planned" />
+
+```c
+/**
+ * @brief  Plays one of the game's short jingles (a pickup, a secret) over the music.
+ * @target 5
+ */
+void jfg_jingle_play(int jingle);
+```

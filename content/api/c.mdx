@@ -8,6 +8,9 @@ description: Code mods for Jet Force Gemini Recompiled - building them, hooks an
 Code mods are C compiled for the N64's CPU and packed into an `.nrm`. They can hook or replace any game function, and
 they get the port's own helpers and events through `mod_api/jfg_api.h`. API version 3.
 
+Every helper, event and struct, today's and planned, is in the [C API reference](/api/reference), area by
+area.
+
 ## Building a code mod
 
 - C, compiled with clang for MIPS (`-target mips -mips2 -mabi=32`) and linked with `ld.lld` and the template's

@@ -1,0 +1,157 @@
+---
+title: 'C API: Game loop'
+description: Tick events, frame-rate-safe timing, pause and game-mode events of the Jet Force Gemini Recompiled C mod API.
+---
+
+# Game loop
+
+The game runs in ticks. At Game 30 one tick covers two video frames, at Game 60 one. These entries let a mod run
+every tick, behave the same at both frame rates, and know whether the game is paused, on a menu or in a level.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_game_tick` | Every tick, before the game runs it | <Status s="built" /> |
+| `jfg_get_tick_scale` | Game time this tick covers: 1.0 at 30 fps, 0.5 at 60 | <Status s="built" /> |
+| `jfg_on_game_tick_end` | Every tick, after the game ran it | <Status s="planned" /> |
+| `jfg_game_mode` | Title, menus, map, level, cutscene, multiplayer | <Status s="planned" /> |
+| `jfg_on_game_mode_change` | The game moved to another mode | <Status s="planned" /> |
+| `jfg_is_paused` | Whether the pause menu is open | <Status s="planned" /> |
+| `jfg_on_pause`, `jfg_on_unpause` | The pause menu opened or closed | <Status s="planned" /> |
+| `jfg_time_scale` | Slow motion or fast forward for the game world | <Status s="planned" /> |
+| `jfg_timer_after` | Calls a function after a time | <Status s="planned" /> |
+
+## Ticks
+
+### jfg_on_game_tick <Status s="built" />
+
+```c
+/**
+ * @brief  Once per game tick, before the game runs it.
+ * @param  frames  Video frames the tick covers: 2 at 30 fps, 1 at 60 fps.
+ * @since  1
+ * @lua    jfg.on("tick", fn)  (in levels only)
+ * @note   To act only while a level is played, check jfg_game_mode (v4).
+ */
+RECOMP_CALLBACK("*", jfg_on_game_tick) void my_tick(int frames);
+```
+
+### jfg_on_game_tick_end <Status s="planned" />
+
+```c
+/**
+ * @brief  Once per game tick, after the game ran it: see the tick's results, such as moved objects.
+ * @param  frames  As jfg_on_game_tick.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_game_tick_end) void my_tick_end(int frames);
+```
+
+### jfg_get_tick_scale <Status s="built" />
+
+```c
+/**
+ * @brief  How much game time this tick covers compared with the original game.
+ * @return 1.0 at 30 fps, 0.5 at 60 fps.
+ * @since  1
+ * @note   Multiply per-tick changes (movement, timers, counters) by it so the mod behaves the same at both
+ *         frame rates.
+ */
+float jfg_get_tick_scale(void);
+```
+
+```c
+static float timer;
+RECOMP_CALLBACK("*", jfg_on_game_tick) void count(int frames) {
+    timer += jfg_get_tick_scale();   // +1 per original tick, at any frame rate
+}
+```
+
+## Game modes and pause
+
+### jfg_game_mode <Status s="planned" />
+
+```c
+/** @brief Where the game is. */
+typedef enum {
+    JFG_MODE_BOOT,         ///< Logos and loading
+    JFG_MODE_TITLE,        ///< Title screen and front-end menus
+    JFG_MODE_MAP,          ///< The planet map
+    JFG_MODE_LEVEL,        ///< Playing a level (story)
+    JFG_MODE_CUTSCENE,     ///< A cutscene in or between levels
+    JFG_MODE_MULTIPLAYER,  ///< A multiplayer match
+    JFG_MODE_CREDITS,      ///< Ending and credits
+} JfgGameMode;
+
+/**
+ * @brief  The mode the game is in now.
+ * @target 4
+ * @lua    jfg.mode()  ("title", "map", "level", ...)
+ */
+JfgGameMode jfg_game_mode(void);
+```
+
+### jfg_on_game_mode_change <Status s="planned" />
+
+```c
+/**
+ * @brief  The game moved from one mode to another.
+ * @param  from, to  JfgGameMode values.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_game_mode_change) void my_mode(int from, int to);
+```
+
+### jfg_is_paused <Status s="planned" />
+
+```c
+/**
+ * @brief  Whether the game is paused (the pause menu or the in-level map is open).
+ * @return 1 paused, 0 running.
+ * @target 4
+ * @note   jfg_on_game_tick keeps firing while paused; the game world doesn't move.
+ */
+int jfg_is_paused(void);
+```
+
+### jfg_on_pause, jfg_on_unpause <Status s="planned" />
+
+```c
+/**
+ * @brief  The pause menu opened, or closed and the game goes on.
+ * @target 4
+ * @note   The pause menu's own functions can't be hooked in the port; these events are the way in.
+ */
+RECOMP_CALLBACK("*", jfg_on_pause)   void my_pause(void);
+RECOMP_CALLBACK("*", jfg_on_unpause) void my_unpause(void);
+```
+
+## Time
+
+### jfg_time_scale <Status s="planned" />
+
+```c
+/**
+ * @brief  Slows down or speeds up the game world: objects, enemies, projectiles, animation.
+ * @param  scale  1.0 normal, 0.5 half speed (slow motion), 2.0 double. 0.1 to 4.0.
+ * @param  frames Fade to the new speed over this many frames; 0 at once.
+ * @target 5
+ * @note   Menus, the HUD and music keep normal speed. Resets to 1.0 on a level change.
+ */
+void jfg_time_scale(float scale, int frames);
+```
+
+### jfg_timer_after <Status s="planned" />
+
+```c
+/**
+ * @brief  Calls fn once, after a time in game ticks (paused time doesn't count).
+ * @param  ticks  At 30 fps; the port scales at 60.
+ * @param  fn     Your function; gets arg back.
+ * @return A timer handle, or -1.
+ * @target 4
+ * @note   Timers are dropped on a level change unless keep is set with jfg_timer_keep.
+ */
+int  jfg_timer_after(int ticks, void (*fn)(void* arg), void* arg);
+void jfg_timer_cancel(int timer);
+void jfg_timer_keep(int timer, int keep);
+```

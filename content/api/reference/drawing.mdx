@@ -1,0 +1,125 @@
+---
+title: 'C API: Drawing'
+description: Swapping models and textures, tinting objects, and drawing a mod's own geometry and 2D sprites in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Drawing
+
+Changing how things look while the game runs, and drawing a mod's own graphics. To replace models and textures for
+good, a pack replaces or appends their entries in `jfg_assets.json` ([Pack file formats](/api/files)); these helpers
+are for changes during play.
+
+<Callout type="info">
+**Memory for drawing.** The graphics only reach the first 16 MB. A mod's display lists, vertices and textures
+allocated by the mod sit at `0x81000000` and up and are drawn as they are; see [Memory](/api/memory).
+</Callout>
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_object_draw` | An object is about to be drawn | <Status s="built" /> |
+| Display lists from mod memory | A mod's own geometry, drawn as is | <Status s="built" /> |
+| `jfg_object_set_model` | Swap an object's model | <Status s="planned" /> |
+| `jfg_object_set_tint` | Colour and fade an object | <Status s="planned" /> |
+| `jfg_object_set_texture` | Swap one texture on an object | <Status s="planned" /> |
+| `jfg_texture_replace` | Swap a texture everywhere, for now | <Status s="planned" /> |
+| `jfg_on_draw_world` | Add geometry after the level is drawn | <Status s="planned" /> |
+| `jfg_draw_model` | Draw a model at a place, no object | <Status s="planned" /> |
+| `jfg_draw_sprite`, `jfg_draw_text`, `jfg_draw_rect` | 2D drawing in the HUD | <Status s="planned" /> |
+| `jfg_world_to_screen` | Where a point shows on screen | <Status s="planned" /> |
+
+## Objects
+
+### jfg_object_set_model <Status s="planned" />
+
+```c
+/**
+ * @brief  Draws an object with another model (stock or pack). -1 restores its own.
+ * @target 5
+ * @note   The model needs the same joints for animations to fit; hit areas don't change.
+ */
+void jfg_object_set_model(JfgObject* obj, int model);
+```
+
+### jfg_object_set_tint <Status s="planned" />
+
+```c
+/**
+ * @brief  Multiplies an object's colours and sets its opacity: a hurt flash, a ghost, a frozen look.
+ * @param  color  0xRRGGBBAA; alpha is the opacity. 0xFFFFFFFF restores it.
+ * @target 5
+ */
+void jfg_object_set_tint(JfgObject* obj, unsigned int color, int frames);
+```
+
+### jfg_object_set_texture <Status s="planned" />
+
+```c
+/**
+ * @brief  Swaps one texture on one object's model, keeping the rest: team colours, a damaged look.
+ * @param  from, to  Texture numbers (stock or pack); to -1 restores.
+ * @target 5
+ */
+void jfg_object_set_texture(JfgObject* obj, int from, int to);
+```
+
+### jfg_texture_replace <Status s="planned" />
+
+```c
+/**
+ * @brief  Draws one texture as another everywhere, until restored or the level changes: a level that turns
+ *         to night, water that freezes.
+ * @param  to  -1 restores.
+ * @target 5
+ */
+void jfg_texture_replace(int from, int to);
+```
+
+## Your own drawing
+
+### jfg_on_draw_world <Status s="planned" />
+
+```c
+/**
+ * @brief  After the level and objects are drawn, before the HUD: add your own geometry.
+ * @param  gfx  The display list being built; append your commands (or call jfg_draw_model).
+ * @target 9
+ */
+RECOMP_CALLBACK("*", jfg_on_draw_world) void my_world(void** gfx, int player);
+```
+
+### jfg_draw_model <Status s="planned" />
+
+```c
+/**
+ * @brief  Draws a model at a place for this frame, without an object (previews, decorations).
+ * @param  yaw    Game units.
+ * @target 9
+ * @note   Call from jfg_on_draw_world.
+ */
+void jfg_draw_model(int model, const JfgVec3* pos, int yaw, float scale);
+```
+
+### jfg_draw_sprite, jfg_draw_text, jfg_draw_rect <Status s="planned" />
+
+```c
+/**
+ * @brief  2D drawing on the screen, in 320x240 coordinates (scaled to the window).
+ * @param  texture  A 2D texture (pack or stock).
+ * @target 9
+ * @note   Call from jfg_on_hud_draw. Text uses the game's font.
+ */
+void jfg_draw_sprite(int texture, float x, float y, float scale, unsigned int color);
+void jfg_draw_text(int text, float x, float y, unsigned int color);
+void jfg_draw_rect(float x, float y, float w, float h, unsigned int color);
+```
+
+### jfg_world_to_screen <Status s="planned" />
+
+```c
+/**
+ * @brief  Where a world point shows on a player's screen, in 320x240 coordinates.
+ * @return 1 if it's in front of the camera, 0 if behind.
+ * @target 9
+ */
+int jfg_world_to_screen(int player, const JfgVec3* pos, float* x, float* y);
+```

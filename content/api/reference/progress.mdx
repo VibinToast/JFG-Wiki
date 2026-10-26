@@ -1,0 +1,189 @@
+---
+title: 'C API: Items and progress'
+description: Pickups, keys, collectibles, game flags, doors and per-mod save data in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Items and progress
+
+What the player collects and what the game remembers: pickups, keys and collectibles, the game's saved flags, doors,
+and a mod's own save data.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_on_pickup` | A player is about to collect something | <Status s="planned" /> |
+| `jfg_item_get`, `jfg_item_give` | Keys, collectibles, health and ammo items | <Status s="planned" /> |
+| `jfg_tribal_count`, `jfg_tribal_rescue` | Tribals rescued in a region | <Status s="planned" /> |
+| `jfg_flag_get`, `jfg_flag_set` | The game's saved flags | <Status s="partial" /> |
+| `jfg_door_unlock`, `jfg_door_lock`, `jfg_door_locked` | Doors by door id | <Status s="partial" /> |
+| `jfg_on_door_open` | A door opened | <Status s="planned" /> |
+| `jfg_save_get_int`, `jfg_save_set_int`, `jfg_save_get_blob`, `jfg_save_set_blob` | The mod's own save data | <Status s="planned" /> |
+| `jfg_save_slot` | The save file being played | <Status s="planned" /> |
+| `jfg_on_save_loaded`, `jfg_on_save_written` | A save file was loaded or written | <Status s="planned" /> |
+| `jfg_stat_get`, `jfg_stat_add` | Shots, kills, time, per weapon and level | <Status s="planned" /> |
+
+## Pickups and items
+
+```c
+/** @brief Item classes. */
+typedef enum {
+    JFG_ITEM_HEALTH,        ///< Health pickups
+    JFG_ITEM_AMMO,          ///< Ammo for a weapon (value: the slot)
+    JFG_ITEM_WEAPON,        ///< A weapon (value: the slot)
+    JFG_ITEM_KEY,           ///< A key (value: its colour number)
+    JFG_ITEM_JETPACK_PART,  ///< Parts that build the jetpack
+    JFG_ITEM_SHIP_PART,     ///< Parts of the ship
+    JFG_ITEM_TOTEM,         ///< Totems
+    JFG_ITEM_COLLECTIBLE,   ///< Other collectibles the game counts
+    JFG_ITEM_OTHER,         ///< Anything else, by object type
+} JfgItem;
+```
+
+### jfg_on_pickup <Status s="planned" />
+
+```c
+/** @brief A pickup about to be collected. */
+typedef struct {
+    JfgObject* object;   ///< The pickup
+    int        player;
+    JfgItem    item;
+    int        value;    ///< Which one (slot, key colour); changeable
+    int        amount;   ///< How much (ammo, health); changeable
+    int        cancel;   ///< 1: not collected, it stays
+} JfgPickup;
+
+/**
+ * @brief  A player touched a pickup.
+ * @target 5
+ */
+RECOMP_CALLBACK("*", jfg_on_pickup) void my_pickup(JfgPickup* p);
+```
+
+### jfg_item_get, jfg_item_give <Status s="planned" />
+
+```c
+/**
+ * @brief  How many of an item a player has; giving some (negative to take).
+ * @param  value  Which one: the key colour, weapon slot... 0 when the class has one kind.
+ * @target 5
+ */
+int  jfg_item_get(int player, JfgItem item, int value);
+void jfg_item_give(int player, JfgItem item, int value, int amount);
+```
+
+### jfg_tribal_count, jfg_tribal_rescue <Status s="planned" />
+
+```c
+/**
+ * @brief  Tribals rescued and their total in a region of the level; rescuing one from code.
+ * @param  region  -1 for the current region.
+ * @target 5
+ */
+int  jfg_tribal_count(int region, int* total);
+void jfg_tribal_rescue(JfgObject* tribal);
+```
+
+## Flags
+
+The game keeps flags in the save file for opened chests, collected items, story steps. Each has a number.
+
+### jfg_flag_get, jfg_flag_set <Status s="partial" />
+
+```c
+/**
+ * @brief  Reads or sets one of the game's saved flags.
+ * @target 4
+ * @lua    jfg.flag(n), jfg.set_flag(n, on)  (built)
+ * @note   Flags are the game's own: setting one the story uses changes the story. For a mod's own state use
+ *         jfg_save_*.
+ */
+int  jfg_flag_get(int flag);
+void jfg_flag_set(int flag, int on);
+```
+
+## Doors
+
+Doors have a door id (Studio's door and key-lock fields). Squads unlock doors with their id when they're cleared.
+
+### jfg_door_unlock, jfg_door_lock, jfg_door_locked <Status s="partial" />
+
+```c
+/**
+ * @brief  Unlocks or locks the doors with a door id; whether they're locked.
+ * @return locked: 1 locked, 0 open to the player, -1 no such door in the level.
+ * @target 4
+ * @lua    jfg.unlock_door(id), jfg.door_locked(id)  (built)
+ */
+void jfg_door_unlock(int door);
+void jfg_door_lock(int door);
+int  jfg_door_locked(int door);
+```
+
+### jfg_on_door_open <Status s="planned" />
+
+```c
+/**
+ * @brief  A door opened (a player walked up to an unlocked door).
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_door_open) void my_door(JfgObject* door, int id, int player);
+```
+
+## Save data
+
+A mod's own values, kept with each save file in a file beside it (`saves/<slot>.mods.json`). Keys are per mod: two
+mods can use the same key name.
+
+### jfg_save_get_int, jfg_save_set_int <Status s="planned" />
+
+```c
+/**
+ * @brief  An integer in the save file being played.
+ * @param  key  Up to 63 characters.
+ * @return get: 0 if never set.
+ * @target 4
+ * @lua    jfg.save(key [, value])
+ * @note   Written when the game saves that file.
+ */
+int  jfg_save_get_int(const char* key);
+void jfg_save_set_int(const char* key, int value);
+```
+
+### jfg_save_get_blob, jfg_save_set_blob <Status s="planned" />
+
+```c
+/**
+ * @brief  Bytes in the save file being played, up to 4 KB per key.
+ * @return get: the size copied; 0 if never set.
+ * @target 4
+ */
+int  jfg_save_get_blob(const char* key, void* out, int size);
+void jfg_save_set_blob(const char* key, const void* data, int size);
+```
+
+### jfg_save_slot, jfg_on_save_loaded, jfg_on_save_written <Status s="planned" />
+
+```c
+/**
+ * @brief  The save file being played (-1 before one is chosen); a file was loaded or written.
+ * @target 4
+ */
+int jfg_save_slot(void);
+RECOMP_CALLBACK("*", jfg_on_save_loaded)  void my_loaded(int slot);
+RECOMP_CALLBACK("*", jfg_on_save_written) void my_written(int slot);
+```
+
+## Stats
+
+### jfg_stat_get, jfg_stat_add <Status s="planned" />
+
+```c
+/** @brief Stats the game keeps per save file. */
+typedef enum { JFG_STAT_SHOTS, JFG_STAT_HITS, JFG_STAT_KILLS, JFG_STAT_TIME, JFG_STAT_DEATHS } JfgStat;
+
+/**
+ * @brief  A stat, per weapon slot or level (-1 for the total); adding to it.
+ * @target 5
+ */
+int  jfg_stat_get(JfgStat stat, int which);
+void jfg_stat_add(JfgStat stat, int which, int amount);
+```

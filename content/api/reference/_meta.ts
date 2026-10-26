@@ -1,0 +1,20 @@
+// The C API reference: one page per area, in the order a modder usually needs them.
+export default {
+  index: 'Overview',
+  core: 'Core',
+  'game-loop': 'Game loop',
+  world: 'World map',
+  level: 'Levels',
+  player: 'Players and input',
+  weapons: 'Weapons',
+  objects: 'Objects',
+  kinds: 'Custom enemies (kinds)',
+  combat: 'Combat',
+  squads: 'Squads and AI',
+  progress: 'Items and progress',
+  camera: 'Camera',
+  ui: 'Text, HUD and menus',
+  audio: 'Music and sound',
+  effects: 'Effects',
+  drawing: 'Drawing',
+};

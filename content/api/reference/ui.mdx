@@ -1,0 +1,232 @@
+---
+title: 'C API: Text, HUD and menus'
+description: Text and translations, on-screen lines and talkers, HUD bars and elements, the pause menu and mod settings in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Text, HUD and menus
+
+Words on screen and the screen's furniture: text that can be translated, lines and conversations, HUD bars and
+elements, the pause menu, and settings a mod shows the player.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_get_language` | The language shown | <Status s="built" /> |
+| `jfg_on_language_change` | The player chose another language | <Status s="built" /> |
+| `jfg_text_get` | A text's string in the language shown | <Status s="planned" /> |
+| `jfg_text_set` | Replace one of the game's texts | <Status s="planned" /> |
+| `jfg_text_line` | Show a line on screen | <Status s="partial" /> |
+| `jfg_text_talk` | A conversation with a speaker | <Status s="planned" /> |
+| `jfg_on_text_show` | The game is about to show a text | <Status s="planned" /> |
+| `jfg_hud_bar` | A bar: boss health, timers | <Status s="planned" /> |
+| `jfg_hud_counter` | A number with an icon | <Status s="planned" /> |
+| `jfg_hud_hide` | Hide parts of the game's HUD | <Status s="planned" /> |
+| `jfg_hud_marker` | A marker over an object or point | <Status s="planned" /> |
+| `jfg_on_hud_draw` | Draw your own HUD | <Status s="planned" /> |
+| `jfg_pause_add_item` | An entry in the pause menu | <Status s="planned" /> |
+| `jfg_setting_int`, `jfg_setting_bool` | Settings for the player in the Mods menu | <Status s="planned" /> |
+| `jfg_ui_panel` | A debug window (F9) | <Status s="planned" /> |
+
+## Language
+
+### jfg_get_language <Status s="built" />
+
+```c
+/**
+ * @brief  The language shown.
+ * @param  id, size  Gets the locale's id (0 ended, cut to size): "builtin.1" to "builtin.4" for the game's own
+ *                   languages, "mod.<mod id>" for a locale mod.
+ * @return 0 for English, 1 for any other.
+ * @since  2
+ */
+int jfg_get_language(char* id, int size);
+```
+
+### jfg_on_language_change <Status s="built" />
+
+```c
+/**
+ * @brief  The player chose another language; it's shown from this tick on.
+ * @since  2
+ * @note   Re-point any text you set with jfg_text_set if you keep per-language strings yourself.
+ */
+RECOMP_CALLBACK("*", jfg_on_language_change) void my_lang(void);
+```
+
+## Text
+
+A pack's texts live in its locale files, one per language; code refers to them by handle:
+`jfg_find("text/<name>")`. The port picks the string for the language shown.
+
+### jfg_text_get <Status s="planned" />
+
+```c
+/**
+ * @brief  A text's string in the language shown.
+ * @param  text  A text handle, or a stock text as jfg_find("stock:text/<table>.<index>").
+ * @return The string (valid until the language changes), or "" if there's none.
+ * @target 4
+ */
+const char* jfg_text_get(int text);
+```
+
+### jfg_text_set <Status s="planned" />
+
+```c
+/**
+ * @brief  Replaces one of the game's texts (a weapon name, a menu entry, a hint) with yours.
+ * @param  stock  The game's text: jfg_find("stock:text/<table>.<index>").
+ * @param  text   Your text handle; -1 restores the game's.
+ * @target 4
+ */
+void jfg_text_set(int stock, int text);
+```
+
+### jfg_text_line <Status s="partial" />
+
+```c
+/**
+ * @brief  Shows a line on screen, like a subtitle.
+ * @param  frames  How long; 0 for the default (3 seconds).
+ * @target 4
+ * @lua    jfg.message(text [, seconds])  (built)
+ */
+void jfg_text_line(int text, int frames);
+```
+
+### jfg_text_talk <Status s="planned" />
+
+```c
+/**
+ * @brief  A conversation: lines one after another, the speaker's name over them, the player presses A to go on.
+ * @param  speaker  The speaker's object (it faces the player and animates), or NULL.
+ * @param  name     Text handle for the speaker's name, or -1.
+ * @param  lines    Text handles, in order.
+ * @param  done     Called when the last line is closed, or NULL.
+ * @target 5
+ * @note   The player can't move while it's open.
+ */
+void jfg_text_talk(JfgObject* speaker, int name, const int* lines, int count, void (*done)(void));
+```
+
+### jfg_on_text_show <Status s="planned" />
+
+```c
+/** @brief A text the game is about to show (hint, talker, message). */
+typedef struct {
+    int text;    ///< Changeable: another text to show instead
+    int cancel;  ///< 1: show nothing
+} JfgTextShow;
+
+/**
+ * @brief  Before the game shows a text.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_text_show) void my_text(JfgTextShow* t);
+```
+
+## HUD
+
+HUD helpers draw for the current tick: call them every tick for as long as the element should show.
+
+### jfg_hud_bar <Status s="planned" />
+
+```c
+/**
+ * @brief  A labelled bar: a boss's health, a timer, a charge.
+ * @param  label  Text handle, or -1 for none.
+ * @param  value  0.0 to 1.0.
+ * @param  color  0xRRGGBBAA.
+ * @param  slot   0 top of the screen, 1 below it, 2 bottom.
+ * @target 9
+ */
+void jfg_hud_bar(int label, float value, unsigned int color, int slot);
+```
+
+### jfg_hud_counter <Status s="planned" />
+
+```c
+/**
+ * @brief  A number with an icon, under the game's own counters.
+ * @param  icon  A 2D texture (pack or stock), or -1.
+ * @target 9
+ */
+void jfg_hud_counter(int icon, int value);
+```
+
+### jfg_hud_hide <Status s="planned" />
+
+```c
+/** @brief Parts of the game's HUD. */
+enum {
+    JFG_HUD_HEALTH = 1, JFG_HUD_WEAPON = 2, JFG_HUD_AMMO = 4, JFG_HUD_RETICLE = 8,
+    JFG_HUD_COUNTERS = 16, JFG_HUD_ALL = 31,
+};
+
+/**
+ * @brief  Hides parts of the game's HUD for this tick.
+ * @target 9
+ */
+void jfg_hud_hide(int parts);
+```
+
+### jfg_hud_marker <Status s="planned" />
+
+```c
+/**
+ * @brief  An icon over an object or a point, kept on screen's edge when it's off screen (objectives).
+ * @param  obj  The object, or NULL to use pos.
+ * @target 9
+ */
+void jfg_hud_marker(JfgObject* obj, const JfgVec3* pos, int icon, unsigned int color);
+```
+
+### jfg_on_hud_draw <Status s="planned" />
+
+```c
+/**
+ * @brief  After the game's HUD is drawn: add your own with the drawing helpers (Drawing).
+ * @param  player  Whose screen (split screen in multiplayer).
+ * @target 9
+ */
+RECOMP_CALLBACK("*", jfg_on_hud_draw) void my_hud(int player);
+```
+
+## Menus and settings
+
+### jfg_pause_add_item <Status s="planned" />
+
+```c
+/**
+ * @brief  An entry at the bottom of the pause menu.
+ * @param  label  Text handle.
+ * @param  fn     Called when the player picks it.
+ * @return A handle, or -1.
+ * @target 9
+ */
+int jfg_pause_add_item(int label, void (*fn)(void));
+```
+
+### jfg_setting_int, jfg_setting_bool <Status s="planned" />
+
+```c
+/**
+ * @brief  A setting the player changes for the mod in the Mods menu; its value now.
+ * @param  key    The setting's key in mod.json's "settings".
+ * @return The value (the default until the player changes it).
+ * @target 4
+ * @note   Settings are declared in mod.json, so the menu shows them before the mod runs.
+ */
+int jfg_setting_int(const char* key);
+int jfg_setting_bool(const char* key);
+```
+
+### jfg_ui_panel <Status s="planned" />
+
+```c
+/**
+ * @brief  A window in the port's F9 tools, drawn each frame by fn: debug values, test buttons.
+ * @target 9
+ * @note   For testing; players see it only with F9 open.
+ */
+int jfg_ui_panel(const char* title, void (*fn)(void));
+```

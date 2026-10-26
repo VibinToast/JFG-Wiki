@@ -1,0 +1,248 @@
+---
+title: 'C API: Custom enemies (kinds)'
+description: Object kinds in the Jet Force Gemini Recompiled C mod API - registering custom enemies and objects with their own code, per-object data, Studio fields, and sharing them through library mods.
+---
+
+# Custom enemies and objects (kinds)
+
+A **kind** is an object type with its own code: a custom enemy, boss, talker, pickup or prop. A mod registers it once
+with callbacks; the port runs the callbacks for every object of that kind, in any level of any pack. Kinds are how
+enemy libraries work: one mod provides the enemies, other packs place them from Studio.
+
+<Callout type="info">
+**Kinds versus hooks.** A hook on a stock enemy's function changes every enemy that uses it, and Studio can't tell
+what it does. A kind is a type of its own: placing it changes nothing else, and its fields show in Studio.
+</Callout>
+
+| Entry | Brief | Status |
+|---|---|---|
+| `JfgKindDef` | A kind: base, model, flags, sizes, callbacks, fields | <Status s="planned" /> |
+| `jfg_kind_register` | Register a kind | <Status s="planned" /> |
+| `jfg_kind_find`, `jfg_kind_name` | A kind by name; a kind's name | <Status s="planned" /> |
+| `jfg_object_data` | The object's own data block | <Status s="planned" /> |
+| `jfg_object_field_int`, `jfg_object_field_float` | A placement's Studio field values | <Status s="planned" /> |
+| `jfg_kind_extend` | A new kind from another, overriding some callbacks | <Status s="planned" /> |
+| `jfg_kind_call_base` | Run the extended kind's callback | <Status s="planned" /> |
+| `jfg_kind_set_state`, `jfg_kind_state` | A small state machine per object | <Status s="planned" /> |
+| `"behaviours"` in `jfg_assets.json` | Data size and flags for a behaviour, as data | <Status s="planned" /> |
+| Studio catalog | Kinds and their fields shown to players in Studio | <Status s="planned" /> |
+
+## How kinds run
+
+- Each kind gets its own **behaviour number** from 0x100 up. The game sets up and runs objects by behaviour number,
+  and it skips numbers it doesn't know; the port catches the kinds' numbers and calls the kind's callbacks instead.
+- The kind's object type is a copy of a **base**: a stock object type whose model, hit area and drawing are close to
+  what the kind needs. Hit flags must match the model; take the base from a stock object shaped like yours.
+- Each object of the kind gets a **data block** of `data_size` bytes for its state. Keep state there, never in static
+  variables, so any number of them can be placed in one level.
+- Squad enemies (ants and other units that move and fight together) are run by the squad code, not by behaviour
+  numbers. A kind can join a squad through [Squads and AI](/api/reference/squads).
+
+## Registering
+
+### JfgKindDef <Status s="planned" />
+
+```c
+/** @brief Hit and collision flags of a kind. */
+enum {
+    JFG_KIND_SOLID      = 1,   ///< Heroes can't walk through it
+    JFG_KIND_SHOOTABLE  = 2,   ///< Has health; shots and blasts hurt it
+    JFG_KIND_LOCKABLE   = 4,   ///< The aim locks on to it
+    JFG_KIND_GRAVITY    = 8,   ///< Falls to the ground
+    JFG_KIND_INTERACT   = 16,  ///< Takes the action button (on_interact)
+    JFG_KIND_ENEMY      = 32,  ///< Counts as an enemy (radar, kill stats, Floyd's targets)
+    JFG_KIND_SAVED      = 64,  ///< Once killed or collected, stays so (a saved bit per placement)
+    JFG_KIND_SHADOW     = 128, ///< Draws a shadow
+};
+
+/** @brief A field players set per placement in Studio. */
+typedef struct {
+    const char* name;        ///< "health", "speed", "aggression"
+    const char* label;       ///< What Studio shows
+    int   type;              ///< 0 int, 1 float, 2 bool, 3 choice
+    float min, max, def;     ///< Range and default
+    const char* choices;     ///< For type 3: "melee|ranged|both"
+    int   offset;            ///< Where it goes in the placement bytes
+} JfgKindField;
+
+/** @brief Called by the port for each object of the kind. */
+typedef struct {
+    void (*on_spawn)(JfgObject* obj);                       ///< Set up: health, hit area, first state
+    void (*on_tick)(JfgObject* obj, int frames);            ///< Every tick
+    void (*on_damaged)(JfgObject* obj, JfgDamage* d);       ///< About to lose health; change or cancel
+    void (*on_killed)(JfgObject* obj, JfgObject* killer);   ///< Health reached 0
+    void (*on_interact)(JfgObject* obj, int player);        ///< Action button (JFG_KIND_INTERACT)
+    void (*on_touch)(JfgObject* obj, int player);           ///< A hero walked into it
+    void (*on_draw)(JfgObject* obj, JfgObjectDraw* d);      ///< Before drawing; cancel or tint
+    void (*on_freed)(JfgObject* obj);                       ///< About to be removed
+} JfgKindCallbacks;
+
+/** @brief A kind. */
+typedef struct {
+    const char* name;           ///< "kind/fire_ant"
+    int   base;                 ///< Stock object type it copies (model, hit area, drawing)
+    int   model;                ///< Model (stock or pack); -1 for the base's
+    float scale;                ///< 1.0 for the base's size
+    int   flags;                ///< JFG_KIND_ bits
+    int   health;               ///< Starting health; 0 for the base's
+    int   data_size;            ///< Bytes of per-object data (jfg_object_data)
+    int   params_size;          ///< Placement bytes it reads (Studio writes them)
+    const JfgKindField* fields; ///< Studio fields, ending with a zeroed entry; NULL for none
+    JfgKindCallbacks cb;        ///< NULL callbacks are skipped
+    const char* description;    ///< Shown in Studio's catalog
+} JfgKindDef;
+```
+
+### jfg_kind_register <Status s="planned" />
+
+```c
+/**
+ * @brief  Registers a kind.
+ * @return Its handle (the object type to place or spawn it), or -1.
+ * @target 6
+ * @note   Only in jfg_on_register. The name's mod id must be yours. The handle is the same number Studio
+ *         places, kept stable in bin/mod_ids.json.
+ */
+int jfg_kind_register(const JfgKindDef* def);
+```
+
+### jfg_kind_find, jfg_kind_name <Status s="planned" />
+
+```c
+/**
+ * @brief  A kind's handle by name ("<mod id>:kind/<name>"), and a kind's name.
+ * @return -1 / NULL if there's no such kind.
+ * @target 6
+ * @note   Another mod's kinds can be found in jfg_on_register when that mod is a dependency.
+ */
+int         jfg_kind_find(const char* name);
+const char* jfg_kind_name(int kind);
+```
+
+## Per-object data and fields
+
+### jfg_object_data <Status s="planned" />
+
+```c
+/**
+ * @brief  The object's data block: data_size bytes, zeroed before on_spawn.
+ * @return NULL for objects that aren't of a kind.
+ * @target 6
+ */
+void* jfg_object_data(JfgObject* obj);
+```
+
+### jfg_object_field_int, jfg_object_field_float <Status s="planned" />
+
+```c
+/**
+ * @brief  A Studio field's value for this placement, or its default for a spawned object.
+ * @param  name  The field's name in JfgKindField.
+ * @target 6
+ */
+int   jfg_object_field_int(JfgObject* obj, const char* name);
+float jfg_object_field_float(JfgObject* obj, const char* name);
+```
+
+## States
+
+### jfg_kind_set_state, jfg_kind_state <Status s="planned" />
+
+```c
+/**
+ * @brief  A small state number per object, and how long it has been in it: idle, chase, attack, flee...
+ * @param  ticks  Out: ticks since the state was set.
+ * @target 6
+ */
+void jfg_kind_set_state(JfgObject* obj, int state);
+int  jfg_kind_state(JfgObject* obj, int* ticks);
+```
+
+## Extending a kind
+
+### jfg_kind_extend, jfg_kind_call_base <Status s="planned" />
+
+```c
+/**
+ * @brief  A new kind made from another (yours or a library's): the same model and callbacks, except those you
+ *         set. For a variant: a stronger brute, an ant with another attack.
+ * @param  base  The kind to extend.
+ * @param  def   Fields set here replace the base's; NULL callbacks keep the base's.
+ * @return Handle, or -1.
+ * @target 6
+ */
+int  jfg_kind_extend(int base, const JfgKindDef* def);
+
+/**
+ * @brief  From inside an overriding callback: runs the base kind's callback of the same name.
+ * @target 6
+ */
+void jfg_kind_call_base(JfgObject* obj);
+```
+
+## As data: behaviour overrides <Status s="planned" />
+
+Some objects need only a data size or hit flags their behaviour doesn't have, with no new code. A pack sets them in
+`jfg_assets.json`:
+
+```json
+{ "behaviours": [ { "behaviour": 21, "dataSize": 68, "flags": 6144 } ] }
+```
+
+## Sharing kinds
+
+- A library mod registers its kinds; other packs list it in `dependencies` and place `"<library id>:kind/<name>"`.
+- Studio reads the library's **catalog** from the installed `.nrm`: each kind's name, description, preview and
+  fields, so players place them from a list and set fields without code.
+- The catalog's kind names and fields are a contract. A library uses semver: renaming or removing a kind or a field
+  is a major version, and Studio warns when a pack needs a newer library.
+
+## Example: a hopping blob
+
+```c
+typedef struct { float home_y; int hops; } Blob;
+
+static const JfgKindField blob_fields[] = {
+    { "hop_height", "Hop height", 1, 10, 200, 60, NULL, 0 },
+    { "health", "Health", 0, 1, 50, 10, NULL, 4 },
+    { 0 }
+};
+
+static void blob_spawn(JfgObject* o) {
+    Blob* b = jfg_object_data(o);
+    JfgVec3 p;
+    jfg_object_get_pos(o, &p);
+    b->home_y = p.y;
+    jfg_object_set_health(o, jfg_object_field_int(o, "health"));
+}
+
+static void blob_tick(JfgObject* o, int frames) {
+    Blob* b = jfg_object_data(o);
+    int ticks;
+    if (jfg_kind_state(o, &ticks) == 0 && ticks > 45) {
+        JfgVec3 up = { 0, jfg_object_field_float(o, "hop_height") / 10, 0 };
+        jfg_object_push(o, &up, 1);
+        jfg_kind_set_state(o, 0);
+        b->hops++;
+    }
+}
+
+static void blob_killed(JfgObject* o, JfgObject* killer) {
+    jfg_fx_spawn(JFG_FX_GOO_BURST, NULL, o);
+}
+
+RECOMP_CALLBACK("*", jfg_on_register) void setup(void) {
+    JfgKindDef d = { 0 };
+    d.name = "kind/blob";
+    d.base = BLOB_BASE;                   // a stock shootable object of about this size and shape
+    d.flags = JFG_KIND_SHOOTABLE | JFG_KIND_LOCKABLE | JFG_KIND_GRAVITY | JFG_KIND_ENEMY;
+    d.data_size = sizeof(Blob);
+    d.params_size = 8;
+    d.fields = blob_fields;
+    d.cb.on_spawn = blob_spawn;
+    d.cb.on_tick = blob_tick;
+    d.cb.on_killed = blob_killed;
+    d.description = "A blob that hops in place.";
+    jfg_kind_register(&d);
+}
+```

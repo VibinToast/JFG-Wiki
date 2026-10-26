@@ -1,0 +1,345 @@
+---
+title: 'C API: World map'
+description: Planets, galaxies and the planet map in the Jet Force Gemini Recompiled C mod API - opening worlds, detecting when a player highlights, chooses, enters or leaves a world.
+---
+
+# World map
+
+Planets (worlds) and galaxies on the planet-select map: opening and completing them, and events for each step a
+player takes, from opening the map to highlighting, choosing, entering and leaving a world.
+
+Planets that packs add come from `jfg_world.json` ([Pack file formats](/api/files)); the game's own planets are
+stock worlds 0-15.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_world_find` | A pack planet's index by name | <Status s="built" /> |
+| `jfg_world_state` | Open, entered, completed | <Status s="built" /> |
+| `jfg_world_unlock` | Opens a pack planet | <Status s="built" /> |
+| `jfg_world_complete` | Marks a pack planet completed | <Status s="built" /> |
+| `jfg_galaxy_find` | A galaxy's index by name | <Status s="built" /> |
+| `jfg_galaxy_current` | The galaxy the map shows | <Status s="built" /> |
+| `jfg_galaxy_show` | Open the map on a galaxy next time | <Status s="built" /> |
+| `jfg_on_map_open` | The map opened | <Status s="built" /> |
+| `jfg_on_galaxy_change` | The player switched galaxy | <Status s="built" /> |
+| `jfg_on_planet_select` | The player chose a pack planet | <Status s="built" /> |
+| `jfg_world_current` | The world of the level being played | <Status s="planned" /> |
+| `jfg_world_count`, `jfg_world_info` | Every world, stock and pack | <Status s="planned" /> |
+| `jfg_world_lock` | Hides a world again | <Status s="planned" /> |
+| `jfg_world_stock_unlock` | Opens a stock world for a hero | <Status s="planned" /> |
+| `jfg_on_map_cursor` | The cursor moved to another world | <Status s="planned" /> |
+| `jfg_on_world_choose` | Any world was chosen: change or cancel | <Status s="planned" /> |
+| `jfg_on_map_close` | The map closed | <Status s="planned" /> |
+| `jfg_on_world_enter`, `jfg_on_world_leave` | Arriving on and leaving a world | <Status s="planned" /> |
+| `jfg_on_world_unlocked`, `jfg_on_world_completed` | A world opened or was completed | <Status s="planned" /> |
+| `jfg_map_set_cursor` | Moves the map's cursor | <Status s="planned" /> |
+
+## The order of events
+
+What a player does on the map, and the events in order:
+
+| Player | Event |
+|---|---|
+| Opens the map (title or pause menu) | `jfg_on_map_open(galaxy)` |
+| Switches galaxy with L / R | `jfg_on_galaxy_change(galaxy)` |
+| Moves the cursor to a planet | `jfg_on_map_cursor(JfgMapCursor*)` <Status s="planned" /> |
+| Presses A on a planet | `jfg_on_world_choose(JfgWorldChoose*)` <Status s="planned" />, then for pack planets `jfg_on_planet_select(planet)` |
+| The map closes | `jfg_on_map_close(chose)` <Status s="planned" /> |
+| The level loads | `jfg_on_level_change`, then `jfg_on_world_leave` / `jfg_on_world_enter` <Status s="planned" />, then `jfg_on_level_loaded` <Status s="planned" /> |
+
+## Names and indexes
+
+A pack planet or galaxy is named `"<mod id>:<id>"`; `"main"` is the game's galaxy. The built helpers take the index
+`jfg_world_find` and `jfg_galaxy_find` return. Planned helpers take a **world number** instead, which covers stock
+worlds too: stock worlds are 0-15, pack planets come after.
+
+## Planets
+
+### jfg_world_find <Status s="built" />
+
+```c
+/**
+ * @brief  A pack planet's index.
+ * @param  planet  "<mod id>:<id>", as in jfg_world.json.
+ * @return The index for the other jfg_world_ helpers, or -1 if it isn't loaded.
+ * @since  3
+ * @lua    jfg.planet(id) and friends take the name directly.
+ */
+int jfg_world_find(const char* planet);
+```
+
+### jfg_world_state <Status s="built" />
+
+```c
+/**
+ * @brief  A pack planet's progress in the save file being played.
+ * @param  planet  Index from jfg_world_find.
+ * @return Bits: 1 open (shown on the map), 2 entered (its level was played), 4 completed. -1: no such planet.
+ * @since  3
+ * @lua    jfg.planet(id) -> open, entered, completed
+ */
+int jfg_world_state(int planet);
+```
+
+### jfg_world_unlock <Status s="built" />
+
+```c
+/**
+ * @brief  Opens a pack planet: it shows on the map from now on.
+ * @param  planet  Index from jfg_world_find.
+ * @since  3
+ * @lua    jfg.unlock_planet(id)
+ * @note   Planets with "unlock": "script" wait for this. Kept per save file.
+ */
+void jfg_world_unlock(int planet);
+```
+
+### jfg_world_complete <Status s="built" />
+
+```c
+/**
+ * @brief  Marks a pack planet completed; planets that open after it ("unlock": {"completed": ...}) show.
+ * @param  planet  Index from jfg_world_find.
+ * @since  3
+ * @lua    jfg.complete_planet(id)
+ */
+void jfg_world_complete(int planet);
+```
+
+### jfg_world_current <Status s="planned" />
+
+```c
+/**
+ * @brief  The world of the level being played, from the level's header.
+ * @return A world number (stock 0-15, pack planets after), or -1 on menus and the map.
+ * @target 4
+ * @lua    jfg.world()
+ */
+int jfg_world_current(void);
+```
+
+### jfg_world_count, jfg_world_info <Status s="planned" />
+
+```c
+/** @brief One world, stock or pack. */
+typedef struct {
+    int         world;         ///< World number
+    const char* name;          ///< "stock:planet/3" or "<mod id>:<id>"
+    const char* display_name;  ///< In the language shown
+    int         galaxy;        ///< Galaxy index
+    int         state;         ///< As jfg_world_state: 1 open, 2 entered, 4 completed
+    int         level[3];      ///< Its entry level for Vela, Juno, Lupus; -1 if that hero can't land
+} JfgWorldInfo;
+
+/**
+ * @brief  How many worlds there are, and each one's details.
+ * @return jfg_world_info: 1 and fills out, or 0 for no such world.
+ * @target 4
+ */
+int jfg_world_count(void);
+int jfg_world_info(int world, JfgWorldInfo* out);
+```
+
+### jfg_world_lock <Status s="planned" />
+
+```c
+/**
+ * @brief  Hides a world from the map again, for the save file being played.
+ * @param  world  World number.
+ * @target 4
+ * @note   For story mods that close a world after an event. Stock worlds are per hero, so this closes it for
+ *         all three.
+ */
+void jfg_world_lock(int world);
+```
+
+### jfg_world_stock_unlock <Status s="planned" />
+
+```c
+/**
+ * @brief  Opens a stock world for one hero, as the game does when a story exit is taken.
+ * @param  character  0 Vela, 1 Juno, 2 Lupus.
+ * @param  world      Stock world 0-15.
+ * @target 4
+ */
+void jfg_world_stock_unlock(int character, int world);
+```
+
+## Galaxies
+
+### jfg_galaxy_find <Status s="built" />
+
+```c
+/**
+ * @brief  A galaxy's index.
+ * @param  galaxy  "main" for the game's own, "<mod id>:<id>" for a pack's.
+ * @return Its index, or -1.
+ * @since  3
+ */
+int jfg_galaxy_find(const char* galaxy);
+```
+
+### jfg_galaxy_current <Status s="built" />
+
+```c
+/**
+ * @brief  The galaxy the map shows.
+ * @return Its index, or -1 while the map is closed.
+ * @since  3
+ * @lua    jfg.galaxy()
+ */
+int jfg_galaxy_current(void);
+```
+
+### jfg_galaxy_show <Status s="built" />
+
+```c
+/**
+ * @brief  The next time the map opens, it opens on this galaxy (when one of its planets is open).
+ * @since  3
+ * @lua    jfg.show_galaxy(id)
+ */
+void jfg_galaxy_show(int galaxy);
+```
+
+## Map events
+
+### jfg_on_map_open <Status s="built" />
+
+```c
+/**
+ * @brief  The planet map opened, from the title or the pause menu.
+ * @param  galaxy  The galaxy it shows.
+ * @since  3
+ */
+RECOMP_CALLBACK("*", jfg_on_map_open) void my_map(int galaxy);
+```
+
+### jfg_on_galaxy_change <Status s="built" />
+
+```c
+/**
+ * @brief  The player switched galaxy on the map with L or R.
+ * @since  3
+ */
+RECOMP_CALLBACK("*", jfg_on_galaxy_change) void my_galaxy(int galaxy);
+```
+
+### jfg_on_planet_select <Status s="built" />
+
+```c
+/**
+ * @brief  The player chose a pack planet; its level starts next.
+ * @param  planet  Index as from jfg_world_find.
+ * @since  3
+ * @note   Pack planets only. jfg_on_world_choose (planned) covers every world and can change the level.
+ */
+RECOMP_CALLBACK("*", jfg_on_planet_select) void my_select(int planet);
+```
+
+### jfg_on_map_cursor <Status s="planned" />
+
+```c
+/** @brief The map's cursor moved. */
+typedef struct {
+    int world;      ///< The world now highlighted, or -1 for a route point with none
+    int previous;   ///< The world highlighted before, or -1
+    int galaxy;     ///< The galaxy shown
+} JfgMapCursor;
+
+/**
+ * @brief  The player moved the map's cursor to another planet: show a preview, play a sound, show a tip.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_map_cursor) void my_cursor(JfgMapCursor* c);
+```
+
+### jfg_on_world_choose <Status s="planned" />
+
+```c
+/** @brief A world was chosen on the map. Change level or start_point to land elsewhere. */
+typedef struct {
+    int world;        ///< World number, stock or pack
+    int character;    ///< The hero going: 0 Vela, 1 Juno, 2 Lupus
+    int level;        ///< The level that will load; changeable
+    int start_point;  ///< Its start point; changeable
+    int cancel;       ///< 1: stay on the map (play your own "locked" sound, show a message)
+} JfgWorldChoose;
+
+/**
+ * @brief  The player pressed A on any world, stock or pack, before the map closes.
+ * @target 4
+ * @note   For a space-flight level between planets, set level to it and remember the world chosen.
+ */
+RECOMP_CALLBACK("*", jfg_on_world_choose) void my_choose(JfgWorldChoose* c);
+```
+
+### jfg_on_map_close <Status s="planned" />
+
+```c
+/**
+ * @brief  The map closed.
+ * @param  chose  1 if a world was chosen (a level loads next), 0 if the player backed out.
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_map_close) void my_close(int chose);
+```
+
+### jfg_map_set_cursor <Status s="planned" />
+
+```c
+/**
+ * @brief  Moves the map's cursor to a world, for tutorials and scripted map scenes.
+ * @param  world  An open world on the galaxy shown.
+ * @return 1 done, 0 if the map is closed or the world isn't on it.
+ * @target 4
+ */
+int jfg_map_set_cursor(int world);
+```
+
+## World events
+
+### jfg_on_world_enter, jfg_on_world_leave <Status s="planned" />
+
+```c
+/**
+ * @brief  The level that loads is on another world than the last one: the player left a world and arrived
+ *         on a new one.
+ * @param  world  The world arrived on, or left.
+ * @param  level  The level that loads.
+ * @target 4
+ * @note   leave fires first. Moving between levels of one world fires neither.
+ */
+RECOMP_CALLBACK("*", jfg_on_world_enter) void my_enter(int world, int level);
+RECOMP_CALLBACK("*", jfg_on_world_leave) void my_leave(int world, int level);
+```
+
+### jfg_on_world_unlocked, jfg_on_world_completed <Status s="planned" />
+
+```c
+/**
+ * @brief  A world opened on the map, or was completed, by the game, a pack's rule or a script.
+ * @param  world      World number.
+ * @param  character  The hero it opened for; -1 for pack planets (all heroes).
+ * @target 4
+ */
+RECOMP_CALLBACK("*", jfg_on_world_unlocked)  void my_unlocked(int world, int character);
+RECOMP_CALLBACK("*", jfg_on_world_completed) void my_completed(int world);
+```
+
+## Example: a locked planet that tells you why
+
+```c
+static int vault;
+
+RECOMP_CALLBACK("*", jfg_on_register) void setup(void) {
+    vault = jfg_find("planet/vault");
+}
+
+RECOMP_CALLBACK("*", jfg_on_world_choose) void check(JfgWorldChoose* c) {
+    if (c->world == vault && !jfg_save_get_int("vault_key")) {
+        c->cancel = 1;
+        jfg_text_line(jfg_find("text/vault_locked"), 90);
+    }
+}
+```

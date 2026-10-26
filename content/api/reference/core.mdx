@@ -1,0 +1,160 @@
+---
+title: 'C API: Core'
+description: Version checks, registration, content names and handles, logging and low-level helpers of the Jet Force Gemini Recompiled C mod API.
+---
+
+# Core
+
+Version checks, the registration event, looking up content by name, logging, and the low-level helpers for mods that
+read game data directly.
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_api_version` | The API version the running game provides | <Status s="built" /> |
+| `recomp_printf` | Writes a line to `bin/jfg_mods.log` | <Status s="built" /> |
+| `jfg_on_register` | Once after mods load: register kinds, weapons, sounds | <Status s="planned" /> |
+| `jfg_find` | A content name to its number or handle | <Status s="planned" /> |
+| `jfg_mod_loaded` | Whether another mod is installed and enabled | <Status s="planned" /> |
+| `jfg_log` | A log line with your mod id in front | <Status s="planned" /> |
+| `jfg_random` | The game's random numbers, safe for replays | <Status s="planned" /> |
+| `jfg_overlay_address` | Where an overlay's code or data is loaded now | <Status s="planned" /> |
+| `jfg_fields.h` | Named offsets of the game's structs, for mods | <Status s="planned" /> |
+
+## Version
+
+### jfg_api_version <Status s="built" />
+
+```c
+/**
+ * @brief  The API version the running game provides.
+ * @return 3 in today's port. Compare with JFG_API_VERSION, the version your mod was built against.
+ * @since  1
+ * @note   A mod that calls anything newer than the game provides must check this first and switch the
+ *         feature off, or the game refuses the mod for a missing import.
+ */
+int jfg_api_version(void);
+```
+
+```c
+if (jfg_api_version() < 4) {
+    recomp_printf("my_mod: needs API 4, fog effects off\n");
+}
+```
+
+## Registering content
+
+### jfg_on_register <Status s="planned" />
+
+```c
+/**
+ * @brief  Fires once after all mods are loaded, before the game's first frame.
+ * @target 4
+ * @note   The only place to call jfg_kind_register, jfg_weapon_register, jfg_sound_register and
+ *         jfg_music_register. Mods are called in dependency order: a library before the mods that use it,
+ *         so you can look up a library's kinds here with jfg_find.
+ */
+RECOMP_CALLBACK("*", jfg_on_register) void my_register(void);
+```
+
+### jfg_find <Status s="planned" />
+
+```c
+/**
+ * @brief  Looks up content by name.
+ * @param  name  "<mod id>:<type>/<name>", "stock:<type>/<number>", or "<type>/<name>" for your own mod.
+ *               Types: level, kind, objtype, squad, weapon, sound, music, text, planet, galaxy, model,
+ *               texture.
+ * @return The level or object number for game content, the handle for registered content; -1 if not loaded.
+ * @target 4
+ * @lua    jfg.find(name)
+ * @note   Numbers of appended content are given at start-up and kept in bin/mod_ids.json, so look them up
+ *         instead of hard-coding them.
+ */
+int jfg_find(const char* name);
+```
+
+### jfg_mod_loaded <Status s="planned" />
+
+```c
+/**
+ * @brief  Whether a mod is installed and enabled.
+ * @param  mod_id  The mod's id from its mod.json.
+ * @return 1 if enabled, 0 if not.
+ * @target 4
+ * @note   For optional features that use another mod. For required ones, list the mod in dependencies.
+ */
+int jfg_mod_loaded(const char* mod_id);
+```
+
+## Logging
+
+### recomp_printf <Status s="built" />
+
+```c
+/**
+ * @brief  printf to bin/jfg_mods.log and stderr.
+ * @since  1 (from the runtime, "*")
+ */
+int recomp_printf(const char* fmt, ...);
+```
+
+### jfg_log <Status s="planned" />
+
+```c
+/**
+ * @brief  A log line starting with your mod's id, like Lua's jfg.log.
+ * @target 4
+ * @lua    jfg.log(...)
+ */
+void jfg_log(const char* fmt, ...);
+```
+
+## Random numbers
+
+### jfg_random <Status s="planned" />
+
+```c
+/**
+ * @brief  A random integer from the game's own generator.
+ * @param  max  Upper bound, exclusive.
+ * @return 0 to max - 1.
+ * @target 4
+ * @note   Uses the game's generator so recordings and tests stay repeatable.
+ */
+int jfg_random(int max);
+```
+
+## Low level
+
+For hook mods that read game data the helpers don't cover yet.
+
+### jfg_overlay_address <Status s="planned" />
+
+```c
+/**
+ * @brief  Where a loaded overlay's code or data sits in memory now.
+ * @param  rom  The overlay's ROM address, as in the decomp.
+ * @return Its RAM address, or 0 if it isn't loaded.
+ * @target 4
+ * @note   The game loads overlays wherever it has room, so their data has no fixed address. Read it again
+ *         after a level change; an overlay can move.
+ */
+unsigned int jfg_overlay_address(unsigned int rom);
+```
+
+### jfg_fields.h <Status s="planned" />
+
+A second header, `mod_api/jfg_fields.h`, with the offsets of the game's structs as named constants: objects, hit
+data, heroes, weapon rows, level headers. It lets mods read fields without the decomp's private headers, and lets
+them be published.
+
+```c
+#include "jfg_fields.h"
+
+short health = *(short*)((char*)jfg_object_hit_data(obj) + JFG_HIT_HEALTH);
+```
+
+<Callout type="info">
+Prefer the helpers over offsets: a helper keeps working if the port moves something; an offset is only as stable as
+the game's own layout.
+</Callout>

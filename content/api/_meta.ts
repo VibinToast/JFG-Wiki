@@ -3,6 +3,7 @@ export default {
   weapons: 'Weapons',
   lua: 'Lua scripting',
   c: 'C mod API',
+  reference: 'C API reference',
   files: 'Pack file formats',
   'mods-together': 'When mods meet',
   memory: 'Memory',

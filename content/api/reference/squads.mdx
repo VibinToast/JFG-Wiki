@@ -1,0 +1,192 @@
+---
+title: 'C API: Squads and AI'
+description: Squads, their members, targets and attacks, spawning squads and new squad enemy types in the Jet Force Gemini Recompiled C mod API.
+---
+
+# Squads and AI
+
+Most of the game's enemies are **squad members**: units that move, take cover and fight together, run by the
+game's squad code rather than by code of their own. A squad is placed in a level as a squadron object with members
+around it; when every member dies, the squad can unlock doors.
+
+These entries reach into that system: read and steer squads, change how members attack, and add squad enemy types of
+your own. Studio's [Squads that move](/studio/squads) page covers placing them.
+
+<Callout type="info">
+**The squad code runs at 30 ticks a second** at both frame rates. Squad events fire on that cadence: their `frames`
+is the squad's, not the video's.
+</Callout>
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_squad_of`, `jfg_squad_members`, `jfg_squad_alive` | A member's squad and its members | <Status s="planned" /> |
+| `jfg_squad_target`, `jfg_squad_set_target` | Who a squad is after | <Status s="planned" /> |
+| `jfg_squad_alert` | Wake a squad up | <Status s="planned" /> |
+| `jfg_squad_set_behaviour` | Aggression, cover, retreat | <Status s="planned" /> |
+| `jfg_squad_spawn` | A squad at run time | <Status s="planned" /> |
+| `jfg_on_squad_member_tick` | Each squad tick of a member | <Status s="planned" /> |
+| `jfg_on_squad_fire` | A member is about to attack | <Status s="planned" /> |
+| `jfg_on_squad_alerted` | A squad spotted a hero | <Status s="planned" /> |
+| `jfg_on_squad_cleared` | The last member died | <Status s="planned" /> |
+| `jfg_squad_type_register` | A new squad enemy type | <Status s="planned" /> |
+| `"baddies"`, `"animRows"`, `"objtypes"` in `jfg_assets.json` | Reskins and animation tables as data | <Status s="built" /> |
+
+## Squads and members
+
+### jfg_squad_of, jfg_squad_members, jfg_squad_alive <Status s="planned" />
+
+```c
+/**
+ * @brief  The squad a member belongs to; its members; how many are alive.
+ * @return of: the squadron object, NULL for objects not in a squad. members: how many were written.
+ * @target 7
+ */
+JfgObject* jfg_squad_of(JfgObject* member);
+int        jfg_squad_members(JfgObject* squad, JfgObject** out, int max);
+int        jfg_squad_alive(JfgObject* squad);
+```
+
+### jfg_squad_target, jfg_squad_set_target <Status s="planned" />
+
+```c
+/**
+ * @brief  The object a squad is attacking now, or a new one (a decoy, a kind that draws fire).
+ * @return NULL while the squad hasn't spotted anything.
+ * @target 7
+ */
+JfgObject* jfg_squad_target(JfgObject* squad);
+void       jfg_squad_set_target(JfgObject* squad, JfgObject* target);
+```
+
+### jfg_squad_alert <Status s="planned" />
+
+```c
+/**
+ * @brief  Makes a squad spot a hero now, as if it saw them.
+ * @target 7
+ */
+void jfg_squad_alert(JfgObject* squad, int player);
+```
+
+### jfg_squad_set_behaviour <Status s="planned" />
+
+```c
+/** @brief How a squad fights. */
+typedef struct {
+    float aggression;  ///< 0 holds back, 1 the game's own, 2 charges
+    float accuracy;    ///< Multiplies its spread: 0.5 is twice as accurate
+    float fire_rate;   ///< Multiplies how often members shoot
+    int   use_cover;   ///< 0 never takes cover
+    int   retreat_at;  ///< Members left when the rest flee; 0 never
+} JfgSquadBehaviour;
+
+/**
+ * @brief  Changes how a squad fights, for this visit.
+ * @target 7
+ */
+void jfg_squad_set_behaviour(JfgObject* squad, const JfgSquadBehaviour* b);
+```
+
+### jfg_squad_spawn <Status s="planned" />
+
+```c
+/**
+ * @brief  Makes a squad at run time: waves, ambushes.
+ * @param  type        The member type (stock baddy type or a registered squad type).
+ * @param  count       Members, 1-8.
+ * @param  pos         The squad's centre.
+ * @param  half_size   Half the size of the area it moves in, in world units.
+ * @param  door        The door id its death unlocks, or 0.
+ * @return The squadron object, or NULL.
+ * @target 7
+ * @note   Spawned squads aren't saved.
+ */
+JfgObject* jfg_squad_spawn(int type, int count, const JfgVec3* pos, float half_size, int door);
+```
+
+## Events
+
+### jfg_on_squad_member_tick <Status s="planned" />
+
+```c
+/**
+ * @brief  Each squad tick of a member, before the squad code moves it.
+ * @param  frames  Squad frames this tick covers.
+ * @target 7
+ * @note   Called for every member in the level: check the type first and keep it short.
+ */
+RECOMP_CALLBACK("*", jfg_on_squad_member_tick) void my_member(JfgObject* member, int frames);
+```
+
+### jfg_on_squad_fire <Status s="planned" />
+
+```c
+/** @brief A member about to attack. */
+typedef struct {
+    JfgObject* member;
+    JfgObject* target;    ///< Changeable
+    int        weapon;    ///< Its attack (the type's fire set); changeable
+    JfgVec3    origin;    ///< Changeable
+    JfgVec3    dir;       ///< Changeable
+    int        cancel;    ///< 1: no attack this time
+} JfgSquadFire;
+
+/**
+ * @brief  Before a squad member shoots or strikes.
+ * @target 7
+ */
+RECOMP_CALLBACK("*", jfg_on_squad_fire) void my_fire(JfgSquadFire* f);
+```
+
+### jfg_on_squad_alerted, jfg_on_squad_cleared <Status s="planned" />
+
+```c
+/**
+ * @brief  A squad spotted a hero; every member of a squad is dead (its door unlocks after this).
+ * @target 7
+ */
+RECOMP_CALLBACK("*", jfg_on_squad_alerted) void my_alert(JfgObject* squad, int player);
+RECOMP_CALLBACK("*", jfg_on_squad_cleared) void my_cleared(JfgObject* squad);
+```
+
+## New squad types
+
+Today a pack can reskin a squad enemy (a copy of a stock type with its own model and size, `"objtypes"` with
+`"like"`), borrow animations (`"animRows"`) and patch its animation table (`"baddies"`). New types with their own
+attacks and moves need code:
+
+### jfg_squad_type_register <Status s="planned" />
+
+```c
+/** @brief A squad enemy type. */
+typedef struct {
+    const char* name;        ///< "squad/fire_ant"
+    int   like;              ///< Stock baddy type it moves and animates like
+    int   model;             ///< -1 for the like type's
+    int   health;
+    float speed;             ///< Multiplies the like type's
+    void (*on_tick)(JfgObject* member, int frames);     ///< NULL: the like type's moves
+    void (*on_fire)(JfgSquadFire* f);                   ///< NULL: the like type's attack
+} JfgSquadTypeDef;
+
+/**
+ * @brief  Registers a squad enemy type; squadrons in levels and jfg_squad_spawn can use it.
+ * @return Its type number, or -1.
+ * @target 7
+ * @note   Only in jfg_on_register.
+ */
+int jfg_squad_type_register(const JfgSquadTypeDef* def);
+```
+
+## Example: ambush when the hero picks up a key
+
+```c
+RECOMP_CALLBACK("*", jfg_on_pickup) void ambush(JfgPickup* p) {
+    if (p->item != JFG_ITEM_KEY) return;
+    JfgVec3 at;
+    jfg_player_get_pos(p->player, &at);
+    at.z += 400;
+    JfgObject* squad = jfg_squad_spawn(jfg_find("squad/fire_ant"), 5, &at, 300, 0);
+    if (squad) jfg_squad_alert(squad, p->player);
+}
+```
