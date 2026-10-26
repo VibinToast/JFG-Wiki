@@ -24,6 +24,9 @@ load as an add-on.
 
 **Edit › Preferences › Add-ons**, then **Install from Disk…** in the ▾ menu at the top right, pick the zip, and tick **jfg64: Jet Force Gemini levels**.
 
+Updating: install the new zip the same way, then **restart Blender**. A running Blender keeps the version it
+started with (the add-on's version is in its Add-ons entry).
+
 ### Open the panel
 
 In the 3D View press <kbd>N</kbd> for the sidebar and pick the **JFG** tab.
@@ -76,15 +79,23 @@ and sets the custom properties the game's track importer reads:
 | Kill | A pit floor that kills, below a drop | Opaque |
 | Collider | Invisible but solid: walls that block without being drawn | Opaque |
 | Nocollide | Drawn but not solid: grass tufts, decoration | Opaque |
+| Ledge | The top of something the hero can grab the edges of (below) | Opaque |
 
 The line above the buttons shows the active material and the surface it is now.
+
+**Ledges.** The heroes grab an edge only where it is made a ledge. Give the top of a block or wall the **Ledge**
+surface; the walls below its edges need nothing, as long as their top edges sit exactly on the top's corners
+(model the block in one piece, or snap the walls to the top). Studio's importer finds those walls and makes each edge
+grabbable, and its check says how many ledge edges it found. The hero catches a ledge while falling past it: walking
+off the edge, or dropping beside it after a jump. Everything without a Ledge top has no ledges.
 
 ### Vertex light
 
 The game lights its levels with **vertex colours**. **Bake vertex light** writes a sun and an ambient colour into the
 selected meshes' vertex colours (a `Col` byte colour attribute on face corners): each face gets ambient plus sun ×
 how much it faces the sun. A **Sun lamp** in the scene sets the direction; without one, **Sun direction** does.
-Bake again after you change the model.
+The game draws only these colours, never a material's own colour: tick **Tint by material** to bake each face's
+material colour (its Base Color) in. Bake again after you change the model.
 
 ### Budgets
 
