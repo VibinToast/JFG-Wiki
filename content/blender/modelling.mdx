@@ -43,10 +43,11 @@ attribute (byte colour, face corner or point). It's exported as `COLOR_0` and mu
 | Word | In the game |
 |---|---|
 | `water` | A water surface (see-through): the hero swims below its height. A flat face at the water's height, with alpha in the texture |
-| `lava` or `damage` | A damage floor: pushes the hero and hurts |
+| `lava` or `damage` | A damage floor: pushes Vela and Lupus and hurts them. Juno passes through it, so model a solid floor about 30 below every lava surface, or it's a hole he falls through |
 | `kill` | A kill plane: a pit floor that kills, below a drop |
 | `collider` | Invisible but solid: walls that block without being drawn |
 | `nocollide` | Drawn but not solid: grass tufts, decoration |
+| `ledge` | The top of something the hero can grab the edges of: the walls just below its edges need nothing |
 
 Examples: `rock_lava`, `pit_kill`, `glass_collider`, `pond_water`.
 
