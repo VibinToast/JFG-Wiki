@@ -24,6 +24,34 @@ floors (a bridge deck) reachable by a ramp rather than a step up. Juno walks und
 falls.
 </Callout>
 
+## Organic ground
+
+Boxes and flat floors make a level feel like a test room. jfg64 can make ground for you: run these in Blender's
+Python console, or have an AI agent run them through a Blender MCP server.
+
+```python
+import jfg64
+ground = jfg64.terrain("valley", size=(2400, 2400), height=110, seed=7, style="hills",
+                       flat=[(0, -900, 220), (300, 700, 260)],             # clearings: x, y, radius
+                       paths=[[(0, -900), (-250, -200), (150, 300), (300, 700)]],
+                       rim=380)                                            # hills round the edge
+print(jfg64.terrain_report(ground))   # how much of it is walkable, the steepest slope, triangles
+for i, (x, y, z) in enumerate(jfg64.scatter_points(ground, 14, min_gap=220, max_slope=25)):
+    jfg64.rock(f"rock{i}", radius=60, seed=i, location=(x, y, z))
+```
+
+<Figure src="/img/blender-terrain.png" alt="A green valley ringed by hills, with grey boulders scattered on its floor" caption="terrain() with a rim of hills, a path and two clearings, and rocks from scatter_points. Plain colours here; paint it with game textures or your own." />
+
+- **`terrain`** builds the ground from layered noise:
+  - `style`: `hills` for meadows, `ridges` for rocky mountains, `terraces` for steps;
+  - `flat`: levelled clearings for the start, exits and squads;
+  - `paths`: smoothed tracks between areas;
+  - `rim`: a ring of hills that ends the level instead of walls.
+  Slopes inside the rim are kept below the 45° the heroes can walk up. A new `seed` gives a new landscape.
+- **`rock`** makes a lumpy boulder sunk into the ground. Rocks inside a squad's area become its cover in Studio.
+- **`scatter_points`** finds spots on the gentle ground, a set distance apart, for rocks, pickups or props.
+- Keep `step` (the grid size, default 50) between 40 and 80: every grid square is two triangles.
+
 ## Light it with vertex colours
 
 The game's levels are lit by **vertex colours**: the baked light is the main look. Paint or bake into a colour
@@ -32,6 +60,21 @@ attribute (byte colour, face corner or point). It's exported as `COLOR_0` and mu
 [Bake vertex light](/blender#vertex-light) does this for you.
 
 ## Textures and materials
+
+### The game's own textures
+
+The **Game textures** box in the panel paints with the game's own level textures. They come from your own ROM:
+JFG-Studio builds the library in its data folder the first time you open a project. Pick a texture by **Colour** or
+by the **Game level** that uses it, then **Use on active object**.
+
+A level painted with them carries none of them. Studio names each one by number, and each player's game shows it
+from their own copy. That's how to make a forest level look like the game's forests. Two rules:
+
+- **Don't edit their pixels.** An edited copy is a new image, and the game's art can't go in a pack: Studio's import
+  check and build refuse it.
+- They mix freely with images of your own.
+
+### Your own images
 
 - One image per material, as **PNG**. Small is right for an N64 game: 16×16 to 64×64. Studio cuts larger ones to
   sizes that fit the console's texture memory.
