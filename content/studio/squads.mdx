@@ -1,0 +1,83 @@
+---
+title: Squads that move
+description: What a squad needs to walk, turn and fight in a new level, and how Studio sets it up.
+---
+
+# Squads that move
+
+A squad is a **squadron** (the entry that runs the group), its **members** (the enemies) and a **navigation
+region** they keep to. Getting the members to spawn and fire is easy. Getting them to walk, turn round and come after
+the player needs several things to be right. Each rule below was found in the decomp and play-tested in a new level.
+
+Studio sets all of it up when it makes a squad, and the validator names whatever is missing.
+
+## The rules
+
+### The region goes counter-clockwise
+
+A region is a polygon of region corners, numbered in order around it. Seen from above with x to the right and z
+down the page, the corners must go **counter-clockwise**. The game finds nothing inside a clockwise region, so its
+squad stays where it spawned and never turns. The game's own clockwise regions are holes (below), not areas.
+
+Studio winds every region it makes counter-clockwise, whichever way you click the corners. The validator stops a
+clockwise one (`region-winding`); `fix_squad` turns it round.
+
+### There must be cover
+
+Smart squads (`behaviour` 0x11, used by many of the game's ant squads) only move to **cover**: corners the player can't
+see round. Those are the corners of **holes** (obstacles cut out of the region) and the region's own inward corners.
+
+In a plain rectangle over open floor there is no such corner, so the members crouch and fire and hardly ever move.
+Almost every squad in the game has a region shaped round its room, with holes for pillars and crates.
+
+So give a squad things to hide behind inside its region: blocks, crates, pillars, low walls. Each one is made a
+hole: a region of its own, wound **clockwise** round the obstacle, with a **region settings** entry (flags 1)
+linking it to the squad's region. The members run to its corners, and keep out of it, so they don't walk into the
+obstacle.
+
+- `place_squad` and `add_cover` (the agent tools) find the obstacles in the region and make them holes.
+- An obstacle that crosses the region's edge isn't made a hole: draw the region's outline round it instead (an
+  inward corner is cover too).
+- The validator warns about a smart squad whose region is a plain shape with no holes (`squad-cover`).
+
+### The player must be in a region
+
+Members only notice the player when the player stands inside a region too (any region numbered 1 or more). Make a squad's
+region cover the floor they fight on and the way the player comes in.
+
+### Spawning
+
+A copied stock squadron spawns when a hero walks into a zone placed for **its own level**, so in a new level it may
+never appear. Studio's squads spawn as soon as the level starts (`trigger` 3). The validator warns about one that
+still waits for a stock zone (`squad-trigger`).
+
+### The squadron entry
+
+Some of a squadron's bytes aren't decoded yet, so Studio copies them from a stock squad of the **same enemy** and the
+**same mode**. It picks a smart one (`behaviour` 0x11) before any other, and never a sentry (9), which never walks and
+only faces one way. Any member type works, the pack's own enemy kinds included. `fix_squad` mends a squad that copies
+the wrong one (`squad-stock`).
+
+## Patrols
+
+A patrol squad walks a route of patrol points (`place_patrol`) and fights like a smart squad once it sees the player.
+
+- It walks straight from point to point with no path-finding, so keep each leg of the route clear of obstacles and
+  wide enough for the whole squad.
+- Never give a patrol point a **start value**. It means "ride this point's lift": the squad nearest it stops at its
+  first point for good. The validator warns (`patrol-start`).
+
+<Callout type="info">
+Patrols are taken from the decomp and haven't been play-tested yet.
+</Callout>
+
+## Validator rules
+
+| Rule | What it means |
+|---|---|
+| `region-winding` | The region goes clockwise: its squad stands still. Error. |
+| `squad-cover` | A smart squad's region has no holes and no inward corner: the members stand and fire. |
+| `squad-trigger` | The squad waits for a stock level's zone and may never spawn. |
+| `squad-stock` | The squadron copies another enemy's squad, the wrong mode or a sentry. |
+| `patrol-start` | A patrol point has a start value: the squad near it stops at its first point. |
+| `squad-region` | The squadron's region has no corners in this level: the game crashes when the level starts. Error. |
