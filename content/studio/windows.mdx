@@ -92,7 +92,10 @@ Some of the game's levels share an object list: a change shows in each of them.
 - **Name** is for you only (the game doesn't see it).
 - **Transform**: position, and **Drop to floor**.
 - **Destination** (exits): **Leads to** any of your levels or a stock level, the **Start point** to arrive at (only
-  ones the level has), and **Create return exit**, which adds the way back in your target level. An exit's
+  ones the level has), and **Create return exit**, which adds the way back in your target level. **Go to** opens
+  the destination with that start point selected; for a game level not in your project yet, **Edit … and go there**
+  adds it as a stock-level edit first. A game level's own exits show where they already lead, and can only lead to
+  game levels (your edit of one counts). An exit's
   **arg1A** field is 1 by default, as on most of the game's exits: it shows the stats screen when the exit leads into
   another region. Set it to 0 for an exit that shouldn't.
 - The type's **fields**: named values are lists, the rest numbers. Dimmed values still come from the stock entry the
