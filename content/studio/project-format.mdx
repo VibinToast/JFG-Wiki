@@ -21,6 +21,7 @@ problems at once in the Console.
 | `geometry/<name>.glb` | Level models from Blender; the Water tool adds water planes here |
 | `music/<name>.ogg` | Music, with optional `LOOPSTART` / `LOOPLENGTH` comments |
 | `kinds/<name>.json`, `kinds/<name>/<slot>.png` | Reskinned types: `base`, `scale`, `textures` |
+| `objtypes/<name>.json` | Optional: object types of the pack's own, made from a stock one's definition: `name`, `base` (stock:objtype/0x…), `behaviour`, `model`, `scale`. Placed as `pack:objtype/<name>`; a pack that depends on this one places them as `<mod id>:objtype/<name>` (its dependency names this project's folder in `project`) |
 | `baddies.json` | Optional: patches of the game's enemy animation tables, `[{row, anim, expect, set}]` (fields `action`, `altAction`, `weight`, `stance`, `fireSet`, `loops`); a pack of only these is a library other packs depend on |
 | `triggers.json` | The Triggers window's triggers |
 | `weapons.json` | The Weapons window's values |
