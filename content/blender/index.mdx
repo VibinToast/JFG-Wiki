@@ -103,7 +103,8 @@ Counted live over the visible objects:
 
 - **triangles** in the level;
 - **images**: each new image becomes a new texture of the game's, stored at most 2048 pixels (64 × 32, 32 × 64…;
-  bigger ones are shrunk). Reuse images between materials to keep the pack small;
+  bigger ones, or sides that aren't powers of two, are shrunk: the count turns red and says how many). Reuse images
+  between materials to keep the pack small;
 - **farthest vertex** from the origin: the game takes up to 32767 units. Red past that;
 - the **surfaces** in use.
 
@@ -132,7 +133,8 @@ objects in Studio.
 
 Writes a `.glb` of the visible objects with the settings Studio needs: +Y up, custom properties, modifiers applied,
 vertex colours, no animation, cameras or lights. It refuses to export if a vertex is past 32767 and reports the
-triangle and image counts.
+triangle and image counts. Several levels in one file: one collection per level, exported by script with
+`jfg64.export(path, collection="...")`, from any scene.
 
 ## Into Studio
 
