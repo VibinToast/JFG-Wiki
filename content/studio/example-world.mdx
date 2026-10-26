@@ -25,7 +25,7 @@ To play it straight away (from the Studio folder):
 studio.bat test samples\zephyra.jfgproj --level forest_portal
 ```
 
-That starts the game in Goldwood's first level with only this pack loaded; the portal is just ahead. Use
+That starts the game in the game's first level with only this pack loaded; the portal is just ahead. Use
 `--level landing`, `caverns` or `arena` to start in the world's own levels, and `--start-point 1` for the far end of
 a level.
 
@@ -40,8 +40,8 @@ your copy, not the sample.
 | Folder | In Zephyra |
 |---|---|
 | `geometry/` | `landing.glb`, `caverns.glb`, `arena.glb`, `glacia.glb`, `nimbus.glb`: the five levels' models |
-| `levels/` | Six levels: the five above, and `forest_portal`, an edit of Goldwood's stock Forest First |
-| `kinds/` | `fire_ant`: a BlueAnt with fiery textures |
+| `levels/` | Six levels: the five above, and `forest_portal`, an edit of the game's first level (stock level 21) |
+| `kinds/` | `fire_ant`: an ant with fiery textures |
 | `galaxies/` | `expanse`: the Zephyra Expanse, home planet Zephyra |
 | `planets/` | `zephyra`, `glacia`, `nimbus` |
 | `music/` | Three OGG tracks |
@@ -52,22 +52,22 @@ your copy, not the sample.
 ## The route
 
 <Steps>
-### Forest First (stock, edited)
+### The game's first level (stock, edited)
 
-The pack adds an exit to Goldwood's first level without replacing it: a **portal** with a blue glow, a light just
+The pack adds an exit to the game's first level without replacing it: a **portal** with a blue glow, a light just
 ahead of the new-game start point. In Studio it's the level `forest_portal`, made with **Edit a stock level…** (its
 own objects show in a dim blue and can't be selected). See [Change a stock level](/tutorials/stock-level).
 
 ### Zephyra Landing
 
-<Figure src="/img/studio-overview.png" alt="Zephyra Landing from above: a walled green field, a river, ramps and the north gate" caption="Zephyra Landing. The BlueAnt squad is selected; its door is the north gate." />
+<Figure src="/img/studio-overview.png" alt="Zephyra Landing from above: a walled green field, a river, ramps and the north gate" caption="Zephyra Landing. The ant squad is selected; its door is the north gate." />
 
 - A river with a stone bridge, and crystal outcrops for cover.
 - East: a ramp up to a plateau with a **chest** (the machine gun) and a **scout's note**: a talker that tells its story
   a line at a time (a `talk` trigger with a `lines` action).
 - West: a long ramp up to a ledge with the **yellow key**, needed in the next level.
-- North: a **BlueAnt squad** holds the gate. The gate opens when all three are dead.
-- A small glow by the pad is the **portal home** to Goldwood.
+- North: an **ant squad** holds the gate. The gate opens when all three are dead.
+- A small glow by the pad is the **portal home** to the game's first level.
 
 <Figure src="/img/studio-key-selected.png" alt="The yellow key selected on its ledge; the Inspector shows Coloured key with size 64" caption="The yellow key on the west ledge. Its door in Ember Caverns has keyLock 2: yellow key." />
 
@@ -75,20 +75,20 @@ own objects show in a dim blue and can't be selected). See [Change a stock level
 
 <Figure src="/img/example-caverns.png" alt="Ember Caverns: an orange lava lake with a stone causeway and plaza" caption="Ember Caverns: a lava lake (it burns), a causeway and a plaza." />
 
-- A **Fire Ant squad** on the plaza: the pack's own enemy kind (below), and a ZombieAnt squad on the far shore.
+- A **Fire Ant squad** on the plaza: the pack's own enemy kind (below), and an undead ant squad on the far shore.
 - A chasm with a deadly drop (a `kill` floor) and a narrow bridge.
 - The north door needs the yellow key. Crates for cover, orange lights, the lava slowly flowing (a texture scroll).
 
 ### Sky Arena
 
 - A floating arena over a deadly drop. A stone screen hides the entry, with cover walls and four pillars.
-- A **BigShieldAnt squad** and a **Cyborg squad** both lock the final gate. When it opens, a `door opens` trigger
+- A **shield ant squad** and a **gunner squad** both lock the final gate. When it opens, a `door opens` trigger
   shows a message, changes the music, and **spawns** full health next to you.
 - Behind the gate, the **victory exit** completes Zephyra and leads on to Glacia.
 
 ### Glacia and Nimbus
 
-<Figure src="/img/example-glacia.png" alt="Glacia: a snow field with a frozen lake, ice pillars and walls" caption="Glacia: snow around a frozen lake, ice pillars, an ant squad on the lake and Cyborgs in the north." />
+<Figure src="/img/example-glacia.png" alt="Glacia: a snow field with a frozen lake, ice pillars and walls" caption="Glacia: snow around a frozen lake, ice pillars, an ant squad on the lake and gunners in the north." />
 
 <Figure src="/img/example-nimbus.png" alt="Nimbus: three round islands over a red kill floor joined by bridges" caption="Nimbus: three islands over a deadly drop. Reaching the last one completes it." />
 </Steps>
@@ -119,7 +119,7 @@ arena's exit, Glacia's the pad on the rise. See [A galaxy of your own](/tutorial
 
 ### The Fire Ant
 
-<Figure src="/img/studio-kinds.png" alt="The Kinds window for Fire Ant: base BlueAnt, size 1.00, ten replaced texture slots" caption="The Fire Ant kind: the BlueAnt's model and behaviour with ten new textures." width={345} />
+<Figure src="/img/studio-kinds.png" alt="The Kinds window for Fire Ant: base: the game's ant, size 1.00, ten replaced texture slots" caption="The Fire Ant kind: the ant's model and behaviour with ten new textures." width={345} />
 
 A **kind** is a stock enemy with your textures at your size. The pack carries only the ten PNGs; the port builds the
 model and definition from each player's own game. The caverns' squadron spawns Fire Ants because its `kindFields`
@@ -131,7 +131,7 @@ name the kind. See [A new enemy look](/tutorials/reskin).
 
 | Trigger | When | Then |
 |---|---|---|
-| the portal | level start, Forest First | message |
+| the portal | level start, the game's first level | message |
 | landing intro (and one per level) | level start | message |
 | scout's note | talk, by the chest, every time | lines (one per visit) |
 | fire ants | enter an area in the caverns | message |

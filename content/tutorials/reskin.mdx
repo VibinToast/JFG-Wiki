@@ -5,13 +5,13 @@ description: Reskin a stock enemy as a kind with your own textures and size, and
 
 # A new enemy look
 
-Make a red "Fire Ant" from the game's BlueAnt: same model, animations and behaviour, your textures, its own type. The
+Make a red "Fire Ant" from the game's ant: same model, animations and behaviour, your textures, its own type. The
 pack carries only your PNGs; the port builds the rest from each player's own game.
 
 <Steps>
 ### Make the kind
 
-Open **Kinds** and press **New kind**. Name it `Fire Ant` and pick the base type (search `BlueAnt`). Studio makes
+Open **Kinds** and press **New kind**. Name it `Fire Ant` and pick the base type (the ant, object type `0x78`). Studio makes
 `kinds/fire_ant.json` and an empty `kinds/fire_ant/` folder.
 
 <Figure src="/img/studio-kinds.png" alt="The Kinds window for Fire Ant" caption="The kind's size and texture slots." width={345} />
@@ -39,7 +39,7 @@ slot. Set **Size** if you want bigger or smaller ants (1.00 is the base's).
 ### Place them
 
 The kind is in **Prefabs › Pack kinds**. To make a whole squad spawn Fire Ants, place a squad (**Groups › Squad, region
-and locked door** with BlueAnts) and tell its squadron to use the kind: in the squadron's entry in
+and locked door** with ants) and tell its squadron to use the kind: in the squadron's entry in
 `levels/<level>/objects.json`, add
 
 ```json
