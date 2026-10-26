@@ -1,0 +1,41 @@
+---
+title: Memory
+description: How Jet Force Gemini Recompiled gives levels and mods more memory than the N64 had, and where there is room for more.
+---
+
+# Memory
+
+The game was written for 4 MB of RAM. The port runs the game's own code, so it keeps the game's limits unless it
+lifts them on purpose. Bigger levels, more objects and mods that need memory all build on this.
+
+## The memory map
+
+| Range | Size | What's there |
+|---|---|---|
+| `0x80000000`–`0x80400000` | 4 MB | The game's own code, data and heap. |
+| `0x80400000`–`0x80800000` | 4 MB | The Expansion Pak's second 4 MB, now part of the game's heap. |
+| `0x80800000`–`0x80C00000` | 4 MB | Free: the next room to give the game. |
+| `0x80C00000`–`0x81000000` | 4 MB | Drawing space for the extra blood splats. |
+| `0x81000000` upward | up to 512 MB | Mods' own code and data (`recomp_alloc`). |
+
+The graphics and video only reach the first 16 MB (24-bit addresses), so anything they draw from (display lists,
+vertices, textures) must sit below `0x81000000`. Data only the game's code reads can sit anywhere. Sounds can sit
+anywhere too: the port lets audio read all of it.
+
+## How the port gives the game more
+
+- **A bigger heap.** The game's main heap now ends at `0x80800000` instead of `0x80400000`: twice the room for
+  levels, objects, models and sounds.
+- **Bigger fixed buffers.** Some buffers are a fixed size with no check on what goes in. A custom level's track
+  overflowed one and crashed the game; the port now asks for that buffer at about twice the size.
+- **Keep it outside, draw it in passes.** The game only holds 64 blood splats and drops the oldest. With
+  "Blood stays", the port keeps the dropped ones in its own list and draws them in extra passes, 64 at a time, in
+  the drawing space above. The game's limit stays in its code; the player sets how many stay.
+- **Mod memory.** A mod can allocate its own memory above `0x81000000`, which the game's heap never sees.
+
+## Limits that still apply
+
+- A level's track, packed and unpacked together, must still fit the game's 651 KB track buffer. Studio checks this
+  when you import geometry.
+- The game's object area holds 100 KB and 511 objects, apart from the heap.
+- Growing the heap into the free 4 MB needs the game's own size checks looked at first.

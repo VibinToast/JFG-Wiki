@@ -5,4 +5,5 @@ export default {
   c: 'C mod API',
   files: 'Pack file formats',
   'mods-together': 'When mods meet',
+  memory: 'Memory',
 };
