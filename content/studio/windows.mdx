@@ -98,6 +98,10 @@ Some of the game's levels share an object list: a change shows in each of them.
   game levels (your edit of one counts). An exit's
   **arg1A** field is 1 by default, as on most of the game's exits: it shows the stats screen when the exit leads into
   another region. Set it to 0 for an exit that shouldn't.
+- **Texture scroll**: **texture** is picked from the level's own textures by their pictures. While one is selected,
+  the surfaces it moves glow in the Scene, and every texture scroll in the level moves its surfaces there at the
+  game's speed (**uSpeed** / **vSpeed**: about half a texel a second per unit). For your own geometry the list
+  takes a few seconds to read the first time.
 - The type's **fields**: named values are lists, the rest numbers. Dimmed values still come from the stock entry the
   object was copied from. "Partly decoded" means some of the entry's bytes are kept as they are.
 - **Entry** (closed): the raw bytes, for checking.
