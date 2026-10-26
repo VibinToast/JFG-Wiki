@@ -102,8 +102,8 @@ material colour (its Base Color) in. Bake again after you change the model.
 Counted live over the visible objects:
 
 - **triangles** in the level;
-- **images**: each new image becomes a new 3D texture, and the game's table has room for about three. The count
-  turns red past that. Reuse images between materials;
+- **images**: each new image becomes a new texture of the game's, stored at most 2048 pixels (64 × 32, 32 × 64…;
+  bigger ones are shrunk). Reuse images between materials to keep the pack small;
 - **farthest vertex** from the origin: the game takes up to 32767 units. Red past that;
 - the **surfaces** in use.
 
