@@ -42,7 +42,10 @@ another number, and a save made inside a pack level may point at the wrong one.
 
 Planets and galaxies are stored as `<mod id>:<id>`, so two packs can both have a planet called `zephyra`. The one real
 clash is two packs with the **same mod id**: the loader keeps mods by id, so the second would be ignored or mixed up
-with the first. Pick an id nobody else will: `yourname.my_planet`.
+with the first. Pick an id nobody else will: `yourname_my_planet`.
+Use only letters, digits and `_`: the loader checks a **dependency's** id that way and won't open a pack
+that depends on `yourname.library` (the launcher then says the pack isn't in the mods folder), so an id with a dot
+can never be depended on.
 
 ## Depending on another pack
 
