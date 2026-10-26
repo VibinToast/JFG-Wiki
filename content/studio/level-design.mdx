@@ -1,0 +1,89 @@
+---
+title: Level design
+description: How the game lays out its outdoor and indoor levels, in numbers, and how to build levels like them.
+---
+
+# Level design
+
+The game's levels aren't one big room. They are rooms of different sizes and shapes joined by corridors, tunnels and
+paths, at a few different heights. This page gives the game's own proportions, measured from 274 of its levels, and
+how to build levels that feel like them. AI agents read the same advice through Studio's `design_guide` tool.
+
+## Outdoor or indoor
+
+Few of the game's levels are half and half: most are mostly outdoors or mostly indoors, and the two are built
+differently.
+
+| | Outdoor | Indoor |
+|---|---|---|
+| Floor area | about 2,400 × 2,400 | about 1,600 × 1,600 |
+| Height spread of the floor | about 300; climbing levels pass 1,000 | about 85: mostly flat |
+| Passages (under 400 wide) | a tenth of the floor, about 250 wide | a third of the floor, about 200 wide |
+| Big open ground (over 1,600 wide) | common | none |
+| Ceiling | the sky | rooms 600–800 high, tunnels about 300 |
+
+In both, floors rise gently: slopes, ramps and low steps.
+
+### Outdoor levels
+
+Typical shapes:
+- open ground round a feature (a lake, a crater, a tower), with paths out to side areas;
+- a basin whose paths climb round its sides;
+- a canyon or riverbed winding between cliffs;
+- islands reached by jetpack.
+
+How to build one:
+- **Edges**: end the level with hills, cliffs or water, not walls.
+- **Areas**: put the start, fights, key and exit in clearings at different heights, joined by winding paths, with
+  one loop.
+- **Fill**: rocks, ruins and trees break up open ground.
+
+### Indoor levels
+
+Typical shapes:
+- a main hall with side rooms, alcoves and doors;
+- a round arena with a ring walkway round a pit;
+- winding tunnels opening into small rooms;
+- a chain of rooms;
+- a cluster of small round chambers.
+
+How to build one:
+- **Rooms and corridors**: roof every room. Mix room sizes: one big hall and several smaller rooms, with a third of
+  the floor in corridors and tunnels.
+- **Cover**: pillars and crates in the rooms.
+- **Light**: light rooms and doorways with lights, not the sun.
+
+## Building it in Blender
+
+The [jfg64 add-on](/blender) lays out rooms and passages for you:
+
+```python
+import jfg64
+rooms = [{"name": "hall", "at": (0, 0), "size": (1100, 700), "shape": "hall", "roof": True},
+         {"name": "cave", "at": (1700, 500), "radius": 450, "shape": "cave", "floor": 150, "roof": True},
+         {"name": "yard", "at": (-300, 1700), "radius": 650, "floor": -120, "height": 500}]
+links = [{"from": "hall", "to": "cave", "kind": "tunnel", "wiggle": 0.7, "via": [(900, 150)]},
+         {"from": "hall", "to": "yard", "kind": "canyon", "width": 300, "via": [(-450, 800)]}]
+level = jfg64.layout("level", rooms, links, floor=..., wall=..., ceiling=...)
+print(jfg64.layout_report(level))
+```
+
+<Figure src="/img/blender-layout.png" alt="Five rooms of different shapes and heights joined by a winding tunnel, a corridor and canyons, roofs hidden" caption="layout(): rooms of their own shapes and floor heights, joined by tunnels, corridors and canyons that cut doorways in them. Roofs are hidden here." />
+
+- **Rooms**: `round`, `cave` (rough) or `hall` (built). Each has its own `floor` height and a `roof` if it's indoors.
+- **Links**:
+  - `tunnel` is roofed, `corridor` has walls and open sky, `canyon` has tall walls.
+  - They wind through `via` bends and `wiggle`, slope from one room's floor to the other's, and cut a doorway in
+    each room.
+- **Defaults**: the game's own sizes (passages 200 wide, tunnels 300 high, rooms 600 high).
+- **Outdoors**: [`terrain`](/blender/modelling#organic-ground) makes the open ground, rims and clearings.
+
+## Comparing with the game
+
+Studio's agent tools measure a level as the study did:
+- **Your level**: `level_layout(level)` measures a level of the project.
+- **The game's**: `stock_level_layout(level)` measures one of the game's levels, from your own copy of the game.
+
+Each gives a floor map and the numbers to compare.
+
+<Figure src="/img/studio-level-layout.png" alt="A floor map: rooms in blue, green and grey joined by narrow orange passages" caption="The layout above as level_layout draws it: brighter is higher, darker is roofed, orange marks narrow passages." width={474} />
