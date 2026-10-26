@@ -21,6 +21,7 @@ problems at once in the Console.
 | `geometry/<name>.glb` | Level models from Blender; the Water tool adds water planes here |
 | `music/<name>.ogg` | Music, with optional `LOOPSTART` / `LOOPLENGTH` comments |
 | `kinds/<name>.json`, `kinds/<name>/<slot>.png` | Reskinned types: `base`, `scale`, `textures` |
+| `baddies.json` | Optional: patches of the game's enemy animation tables, `[{row, anim, expect, set}]` (fields `action`, `altAction`, `weight`, `stance`, `fireSet`, `loops`); a pack of only these is a library other packs depend on |
 | `triggers.json` | The Triggers window's triggers |
 | `weapons.json` | The Weapons window's values |
 | `scripts/*.lua` | Your Lua scripts |
