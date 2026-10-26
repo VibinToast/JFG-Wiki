@@ -81,6 +81,10 @@ print(jfg64.layout_report(level))
   doorway gets walked round; one as wide as its tunnel shows gaps round its edges. Studio's placement check says
   when a door doesn't close its opening or stands on a slope.
 - **Defaults**: the game's own sizes (passages 200 wide, tunnels 300 high, rooms 600 high).
+- **Climbs**: anything the player must reach needs steps of about 70. A key on a 210-high block was out of reach,
+  which made the level unbeatable; Studio's placement check says when a key is out of reach.
+- **Water** lies in a hollow, its edge meeting the bank. A water sheet raised over flat ground hovers.
+- **Cover**: give each enemy its own. With fewer rocks than enemies, two ran to the same rock and overlapped.
 - **Exits** are level changes: put them where the player expects to leave, such as the end of a passage. An exit
   back into its own level reloads it, enemies and all, and feels like a hidden teleport; Studio refuses one.
 - **Outdoors**: [`terrain`](/blender/modelling#organic-ground) makes the open ground, rims and clearings.
