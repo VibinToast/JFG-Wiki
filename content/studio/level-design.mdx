@@ -89,6 +89,32 @@ print(jfg64.layout_report(level))
   back into its own level reloads it, enemies and all, and feels like a hidden teleport; Studio refuses one.
 - **Outdoors**: [`terrain`](/blender/modelling#organic-ground) makes the open ground, rims and clearings.
 
+## Building blocks
+
+Beyond rooms and passages, the add-on has pieces for levels with their own shape:
+
+- **`building(rooms, links)`**: square rooms (`"shape": "box"`) joined by straight corridors that turn at right
+  angles, for bases, temples and ships.
+- **A pit** in a room's floor (`"pit": {"radius": 330}`), down to a kill floor, and **`bridge`** to cross it.
+- **`platform`** and **`ramp`**: balconies, stages, terraces and the slopes up to them (45° at most).
+- **Raised doorways**: a passage can leave a room partway up its wall (`"from_floor": 180`), onto a balcony.
+
+## Every level its own
+
+Three trial levels built from the same blobs and tunnels felt the same to play. So each level gets:
+- a **signature** set piece it's built round, such as a chasm crossing, a tower to climb, a corridor maze, a river,
+  jetpack islands or an arena;
+- a **room plan** unlike the world's other levels (hub, chain, loop, arena, terraces, islands, building, vertical);
+- its own mix of room shapes, sizes and heights.
+
+Agents may model anything else in Blender too, as long as it keeps to the game's limits and passes Studio's checks.
+
+## Worlds of several levels
+
+Each level ends at a door with an exit to the next level. A level can also end at two doors: one on along the
+main path, the other into a side path of a level or two with Tribals to rescue, which rejoins the main path or
+leaves the world.
+
 ## Comparing with the game
 
 Studio's agent tools measure a level as the study did:
