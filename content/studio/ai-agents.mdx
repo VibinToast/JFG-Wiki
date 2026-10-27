@@ -1,0 +1,92 @@
+---
+title: Build levels with an AI agent
+description: JFG-Studio's MCP server lets an AI agent such as Claude Code make levels with you, from layout to a build you can play.
+---
+
+# Build levels with an AI agent
+
+JFG-Studio has an **MCP server**: `JFG-Studio-cli mcp` makes Studio's editing tools available to any AI agent that
+speaks the Model Context Protocol, such as Claude Code or Claude Desktop. You describe the level you want. The agent
+opens or creates the project, imports geometry, finds the floor, places squads, doors, keys and exits, validates
+the project, and starts the game in the new level. Then you play it and tell the agent what to change.
+
+The agent edits the same project the editor does. Every change is saved as it's made and can be undone level by
+level. You can open the project in Studio at any time to look at it or carry on by hand (see the tips below).
+
+## Set it up
+
+<Steps>
+### Set up Studio
+
+Follow [Installing JFG-Studio](/getting-started#installing-jfg-studio) and set the `rom` and `port` paths. The
+agent uses the same settings and the same local catalog as the editor.
+
+### Register the server
+
+With Claude Code, once for all your folders (`-s user`), using the full path to `JFG-Studio-cli.exe` in Studio's folder:
+
+```powershell
+claude mcp add -s user jfg-studio -- C:\path\to\JFG-Studio\JFG-Studio-cli.exe mcp
+```
+
+For another client, run `JFG-Studio-cli.exe mcp [project]` as a **stdio** server. Give it a project to open
+that one at the start.
+
+Use `JFG-Studio-cli.exe`, not `JFG-Studio.exe`. The agent talks to the server through the program's input and
+output, and only the console exe has them ([why there are two](/studio/cli#why-there-are-two-exes)).
+
+### Add Blender (optional)
+
+To have the agent model geometry too, also give it Blender 5.2+ with the [jfg64 add-on](/blender) and the Blender
+Foundation's [Blender MCP](https://www.blender.org/lab/mcp-server/) server. Keep Blender open while the agent works.
+Without it, the agent builds levels on geometry you import yourself.
+
+### Ask for a level
+
+Something like *"Make a two-level planet: a grassy landing with a river, and a lava cave behind a door the ant squad
+keeps locked. Put a key in the landing for a door in the cave."* The agent reads Studio's guide first, which explains
+the game's units, limits and how its levels are laid out.
+</Steps>
+
+## What the agent can do
+
+The server has about 60 tools. They do what the editor's windows do, plus tools for looking at a level, because the
+agent can't see the Scene.
+
+| Area | Tools (examples) | Does |
+|---|---|---|
+| Start | `guide`, `design_guide`, `open_project`, `new_project`, `project_summary` | How to make levels for this game, and the project as it is |
+| Learn from the game | `stock_levels`, `stock_level_layout`, `object_types`, `describe_type` | How the game's own levels are laid out, and what each object type takes |
+| See a level | `level_preview`, `level_layout`, `surface_at`, `find_flat`, `raycast` | A picture from above, and where the floor, walls and water are |
+| Build | `add_level`, `set_level`, `place`, `place_squad`, `place_key_door`, `place_switch_door`, `place_patrol`, `connect` | Levels, objects, squads with the doors they lock, and exits between levels |
+| More | `make_kind`, `place_path`, `write_script`, `import_music`, `set_planet`, `set_galaxy` | Enemy kinds, objects that move along paths, Lua, music, planets |
+| Fix | `check_placement`, `settle_objects`, `update_object`, `undo`, `redo` | Objects left floating or buried, and taking back a change |
+| Finish | `validate`, `build`, `play` | Check, build the `.nrm`, and start the game in the level |
+
+<Figure src="/img/studio-agent-preview.webp" alt="A level seen from above: green ground, a blue river across the middle, raised ledges, an exit ring at each end, a red squad inside its region near a yellow door bar, a gold key and green pickups" caption="What level_preview gives the agent: the example world's landing seen from above, with its squad and region, the door they lock, the key, pickups and both exits." width={480} />
+
+## Playing what it made
+
+The agent can't play the game. `play` builds the pack, installs it in Jet Force Gemini: Recompiled's `mods` folder and starts the game in
+the level. You play it and tell the agent what felt wrong. If you'd rather start the game yourself, the agent can
+build and install only, and give you the exact command that starts the level.
+
+<Callout type="info">
+**Your ROM stays on your machine.** The agent reads names and examples from your local catalog, as the editor does.
+Nothing from the ROM goes into the project except the stock numbers that objects start from, and the built pack has
+no game data in it.
+</Callout>
+
+## Tips
+
+- **Have it validate often.** `validate` checks the project against the game's rules and each object against the
+  geometry. The agent should fix every error before `play`.
+- **Ask for a preview.** "Show me the level from above" gets a `level_preview` image you can check before you play.
+- **Re-shaping is safe.** After a geometry change, `reimport_geometry` keeps the objects and lists any the new shape
+  left buried or floating. `settle_objects` puts them back on the floor.
+- **Take turns with the editor.** The agent and the editor each keep their own copy of the project while it's open.
+  If you change it by hand, save in Studio, then ask the agent to open the project again before it carries on.
+  Otherwise its next save writes over your change. After the agent works, reopen the project in Studio.
+
+Without an MCP client, the [command line](/studio/cli) covers the same last steps: `JFG-Studio-cli validate`, `build`
+and `test`.

@@ -3,6 +3,7 @@ export default {
   index: 'Home',
   'getting-started': 'Getting started',
   'what-can-be-modified': 'What can be modified',
+  troubleshooting: 'Troubleshooting',
   studio: 'JFG-Studio',
   blender: 'Blender add-on',
   tutorials: 'Tutorials',

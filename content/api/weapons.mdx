@@ -11,11 +11,11 @@ new weapons.
 ## How weapons work in the game
 
 The game describes the heroes' weapons in one table, one row per weapon slot. A shot reads its row when it's fired and
-hands the values to the weapon's own code (a laser bolt, a rocket, a grenade). The port lets a pack write its own
+hands the values to the weapon's own code (a laser bolt, a rocket, a grenade). Jet Force Gemini: Recompiled lets a pack write its own
 values into those rows while the pack is loaded.
 
 <Callout type="info">
-**The player's settings win.** The port's F9 Weapons tab lets the player change weapons too. When the player ticks
+**The player's settings win.** Jet Force Gemini: Recompiled's F9 Weapons tab lets the player change weapons too. When the player ticks
 "Modify" for a weapon there, their values are used instead of the pack's. With "Modify" off the pack's values apply,
 and without a pack the game's own.
 </Callout>
@@ -46,7 +46,7 @@ pack usually sets its weapons once, at the top of a script; they stay for as lon
 | Field | Range | What it does |
 |---|---|---|
 | `damage` | 0–255 | The projectile's power. For laser bolts it also picks the bolt's size class, as in the original. |
-| `delay` | 0–255 | Frames between shots (at 30 fps; the port scales it at 60). |
+| `delay` | 0–255 | Frames between shots (at 30 fps; Jet Force Gemini: Recompiled scales it at 60). |
 | `throw_delay` | 1–127 | Thrown weapons: frames from the button press to the release. |
 | `lifetime` | 1–255 | How long the projectile lives, so its range. Laser bolts live lifetime × 6 frames. |
 | `spread_x` | 0–8192 | Random sideways spread added to the aim (65536 is a full turn). |
@@ -100,7 +100,7 @@ game uses it, for every hero, and you need the entry numbers from the decomp's t
 The design adds weapons without taking stock slots <Status s="planned" />:
 
 - **Virtual slots.** New weapons get handles 16 and up. While one is selected, the game's own current slot is its
-  *base* weapon, so aim, reticle and animations behave like the base; the port swaps the gun model and the HUD icon
+  *base* weapon, so aim, reticle and animations behave like the base; Jet Force Gemini: Recompiled swaps the gun model and the HUD icon
   and fires the pack's projectile.
 - **Registering**: `jfg_weapon_register` with a name, base slot, HUD texture, gun model per hero, max and starting
   ammo, rate, mode (shot, thrown, charge, beam), projectile kind and damage.

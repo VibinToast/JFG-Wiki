@@ -13,16 +13,16 @@ data.
 
 ## Open it
 
-The project is in Studio's repo at `samples/zephyra.jfgproj`. Open it with **File › Open project…**, or:
+The project comes with Studio, in its `samples/zephyra.jfgproj` folder. Open it with **File › Open project…**, or:
 
 ```powershell
-jfgstudio gui samples\zephyra.jfgproj
+JFG-Studio-cli gui samples\zephyra.jfgproj
 ```
 
-To play it straight away (from the Studio folder):
+To play it straight away, from Studio's folder:
 
 ```powershell
-studio.bat test samples\zephyra.jfgproj --level forest_portal
+JFG-Studio-cli test samples\zephyra.jfgproj --level forest_portal
 ```
 
 That starts the game in the game's first level with only this pack loaded; the portal is just ahead. Use
@@ -31,8 +31,7 @@ a level.
 
 <Callout type="info">
 To make your own pack from it, copy the whole folder, change `id` and `name` in `project.json` (your own mod id), and
-start changing levels. The generator script `samples/make_example_world.py` rewrites the sample from scratch, so edit
-your copy, not the sample.
+start changing levels. Edit your copy, not the sample.
 </Callout>
 
 ## What's in the project
@@ -60,7 +59,7 @@ own objects show in a dim blue and can't be selected). See [Change a stock level
 
 ### Zephyra Landing
 
-<Figure src="/img/studio-overview.png" alt="Zephyra Landing from above: a walled green field, a river, ramps and the north gate" caption="Zephyra Landing. The ant squad is selected; its door is the north gate." />
+<Figure src="/img/studio-overview.webp" alt="Zephyra Landing from above: a walled green field, a river, ramps and the north gate" caption="Zephyra Landing. The ant squad is selected; its door is the north gate." />
 
 - A river with a stone bridge, and crystal outcrops for cover.
 - East: a ramp up to a plateau with a **chest** (the machine gun) and a **scout's note**: a talker that tells its story
@@ -69,11 +68,11 @@ own objects show in a dim blue and can't be selected). See [Change a stock level
 - North: an **ant squad** holds the gate. The gate opens when all three are dead.
 - A small glow by the pad is the **portal home** to the game's first level.
 
-<Figure src="/img/studio-key-selected.png" alt="The yellow key selected on its ledge; the Inspector shows Coloured key with size 64" caption="The yellow key on the west ledge. Its door in Ember Caverns has keyLock 2: yellow key." />
+<Figure src="/img/studio-key-selected.webp" alt="The yellow key selected on its ledge; the Inspector shows Coloured key with size 64" caption="The yellow key on the west ledge. Its door in Ember Caverns has keyLock 2: yellow key." />
 
 ### Ember Caverns
 
-<Figure src="/img/example-caverns.png" alt="Ember Caverns: an orange lava lake with a stone causeway and plaza" caption="Ember Caverns: a lava lake (it burns), a causeway and a plaza." />
+<Figure src="/img/example-caverns.webp" alt="Ember Caverns: an orange lava lake with a stone causeway and plaza" caption="Ember Caverns: a lava lake (it burns), a causeway and a plaza." />
 
 - A **Fire Ant squad** on the plaza: the pack's own enemy kind (below), and an undead ant squad on the far shore.
 - A chasm with a deadly drop (a `kill` floor) and a narrow bridge.
@@ -88,9 +87,9 @@ own objects show in a dim blue and can't be selected). See [Change a stock level
 
 ### Glacia and Nimbus
 
-<Figure src="/img/example-glacia.png" alt="Glacia: a snow field with a frozen lake, ice pillars and walls" caption="Glacia: snow around a frozen lake, ice pillars, an ant squad on the lake and gunners in the north." />
+<Figure src="/img/example-glacia.webp" alt="Glacia: a snow field with a frozen lake, ice pillars and walls" caption="Glacia: snow around a frozen lake, ice pillars, an ant squad on the lake and gunners in the north." />
 
-<Figure src="/img/example-nimbus.png" alt="Nimbus: three round islands over a red kill floor joined by bridges" caption="Nimbus: three islands over a deadly drop. Reaching the last one completes it." />
+<Figure src="/img/example-nimbus.webp" alt="Nimbus: three round islands over a red kill floor joined by bridges" caption="Nimbus: three islands over a deadly drop. Reaching the last one completes it." />
 </Steps>
 
 Every level has a way back: start point 1 is at the far end, by the exit that leads back.
@@ -115,19 +114,19 @@ Zephyra's three levels share one region: moving between them shows nothing.
 A world counts as completed when a trigger's `complete planet` action runs: Zephyra's is the `victory` trigger at the
 arena's exit, Glacia's the pad on the rise. See [A galaxy of your own](/tutorials/planet).
 
-<Figure src="/img/studio-level-graph.png" alt="The Level Graph: each level with its exits and where they lead, then the planets' entry levels" caption="The Level Graph lists every exit and where it leads, then each planet's entry level." />
+<Figure src="/img/studio-level-graph.webp" alt="The Level Graph: each level with its exits and where they lead, then the planets' entry levels" caption="The Level Graph lists every exit and where it leads, then each planet's entry level." />
 
 ### The Fire Ant
 
-<Figure src="/img/studio-kinds.png" alt="The Kinds window for Fire Ant: base: the game's ant, size 1.00, ten replaced texture slots" caption="The Fire Ant kind: the ant's model and behaviour with ten new textures." width={345} />
+<Figure src="/img/studio-kinds.webp" alt="The Kinds window for Fire Ant: base: the game's ant, size 1.00, ten replaced texture slots" caption="The Fire Ant kind: the ant's model and behaviour with ten new textures." width={345} />
 
-A **kind** is a stock enemy with your textures at your size. The pack carries only the ten PNGs; the port builds the
+A **kind** is a stock enemy with your textures at your size. The pack carries only the ten PNGs; Jet Force Gemini: Recompiled builds the
 model and definition from each player's own game. The caverns' squadron spawns Fire Ants because its `kindFields`
 name the kind. See [A new enemy look](/tutorials/reskin).
 
 ### Triggers and the finale
 
-<Figure src="/img/studio-triggers.png" alt="The Triggers window: the portal trigger and the landing intro" caption="Each level greets you with a message; the scout's note, the fire ants' warning and the finale are triggers too." width={345} />
+<Figure src="/img/studio-triggers.webp" alt="The Triggers window: the portal trigger and the landing intro" caption="Each level greets you with a message; the scout's note, the fire ants' warning and the finale are triggers too." width={345} />
 
 | Trigger | When | Then |
 |---|---|---|
@@ -141,11 +140,11 @@ name the kind. See [A new enemy look](/tutorials/reskin).
 
 ### Thin air: the weapon tweak
 
-<Figure src="/img/studio-weapons.png" alt="The Weapons window: Weapon 0 marked changed, other weapons collapsed" caption="Weapon 0, the starting gun, fires faster (delay 8) with faster bolts (speed 140)." width={345} />
+<Figure src="/img/studio-weapons.webp" alt="The Weapons window: Weapon 0 marked changed, other weapons collapsed" caption="Weapon 0, the starting gun, fires faster (delay 8) with faster bolts (speed 140)." width={345} />
 
 ### A script of its own
 
 `scripts/zephyra.lua` sits beside the triggers: it logs each level and how long you take to reach the arena's finale.
 Open it in the **Scripts** window.
 
-<Figure src="/img/studio-scripts.png" alt="The Scripts window with zephyra.lua and the port's API reference below it" caption="The Scripts window: one tab per .lua file, with the API listed below." />
+<Figure src="/img/studio-scripts.webp" alt="The Scripts window with zephyra.lua and Jet Force Gemini: Recompiled's API reference below it" caption="The Scripts window: one tab per .lua file, with the API listed below." />

@@ -1,41 +1,62 @@
 ---
 title: Command line
-description: The jfgstudio command, its subcommands and options.
+description: The JFG-Studio-cli command, its subcommands and options.
 ---
 
 # Command line
 
-Everything the editor does to a project also works from a terminal: `jfgstudio` (or `python -m jfgstudio`). With no
-command it opens the editor.
+Everything the editor does to a project also works from a terminal: `JFG-Studio-cli.exe`, next to `JFG-Studio.exe` in
+Studio's folder. With no command it opens the editor. Run it from that folder, or add the folder to your `PATH` to
+type `JFG-Studio-cli` anywhere.
+
+## Why there are two exes
+
+Studio's folder has two programs that share everything else in it:
+
+| | `JFG-Studio.exe` | `JFG-Studio-cli.exe` |
+|---|---|---|
+| What it's for | The editor: double-click it | The commands below, and the [AI agent server](/studio/ai-agents) |
+| Kind of program | Windowed: no console window opens with it | Console: it prints to the terminal and waits until it's done |
+
+Windows decides when a program is built whether it's a windowed program or a console program, so one exe can't be
+both:
+
+- **A windowed program has no console.** Run from a terminal, it returns straight away, and anything it prints is
+  lost. An AI agent can't talk to it either, because agents talk to the MCP server through the program's input and
+  output.
+- **A console program always opens a console window.** Double-click one and a black window opens next to the editor.
+
+So the editor is windowed, and the command line is a separate console exe. If you only use the editor, you can
+ignore `JFG-Studio-cli.exe`. Running Studio from source, the command is `jfgstudio` instead.
 
 | Command | Options | Does |
 |---|---|---|
-| `jfgstudio gui [project]` | `--screenshot x.png` | The editor; with `--screenshot`, saves a picture of the window and quits |
-| `jfgstudio new <folder>` | `--id` (required), `--name` (required), `--author` | An empty project |
-| `jfgstudio validate <project>` | `--all` (also notes) | Prints problems; exits 1 on errors |
-| `jfgstudio build <project>` | `-o/--out`, `--rom` | Builds the pack (default `<project>/build/<id>.nrm`) |
-| `jfgstudio test <project>` | `--level`, `--start-point`, `--character vela/juno/lupus`, `--rom`, `--no-launch` | Builds, installs into the port's `mods`, starts the game in that level |
-| `jfgstudio catalog` | `--rom` | Rebuilds the local catalog from your ROM |
-| `jfgstudio settings` | | Shows the decomp, port and ROM paths and Studio's folders |
-| `jfgstudio settings set <key> <value>` | key: `decomp`, `port`, `rom` | Sets one (an empty value clears it) |
+| `JFG-Studio-cli gui [project]` | `--screenshot x.png` | The editor; with `--screenshot`, saves a picture of the window and quits |
+| `JFG-Studio-cli new <folder>` | `--id` (required), `--name` (required), `--author` | An empty project |
+| `JFG-Studio-cli validate <project>` | `--all` (also notes) | Prints problems; exits 1 on errors |
+| `JFG-Studio-cli build <project>` | `-o/--out`, `--rom` | Builds the pack (default `<project>/build/<id>.nrm`) |
+| `JFG-Studio-cli test <project>` | `--level`, `--start-point`, `--character vela/juno/lupus`, `--rom`, `--no-launch` | Builds, installs into Jet Force Gemini: Recompiled's `mods`, starts the game in that level |
+| `JFG-Studio-cli catalog` | `--rom` | Rebuilds the local catalog from your ROM |
+| `JFG-Studio-cli settings` | | Shows the ROM and Jet Force Gemini: Recompiled paths and Studio's folders |
+| `JFG-Studio-cli settings set <key> <value>` | key: `rom`, `port` | Sets one (an empty value clears it) |
+| `JFG-Studio-cli mcp [project]` | | Studio's tools for an AI agent, as an MCP server over stdio ([Build levels with an AI agent](/studio/ai-agents)) |
 
-On Windows, `studio.bat` runs the same commands from the Studio folder.
 
 ## Examples
 
 ```powershell
 # A new project
-jfgstudio new C:\Mods\my_planet.jfgproj --id yourname_my_planet --name "My Planet" --author you
+JFG-Studio-cli new C:\Mods\my_planet.jfgproj --id yourname_my_planet --name "My Planet" --author you
 
 # Check and build it
-jfgstudio validate C:\Mods\my_planet.jfgproj
-jfgstudio build C:\Mods\my_planet.jfgproj
+JFG-Studio-cli validate C:\Mods\my_planet.jfgproj
+JFG-Studio-cli build C:\Mods\my_planet.jfgproj
 
 # Play the example world from its second level, at the far end, as Vela
-studio.bat test samples\zephyra.jfgproj --level caverns --start-point 1 --character vela
+JFG-Studio-cli test samples\zephyra.jfgproj --level caverns --start-point 1 --character vela
 ```
 
 <Callout type="info">
-`test` needs the `port` setting and a port new enough to start a level by name (it asks the game for its launch
-options first). It installs the pack as `<port>/mods/<mod id>.nrm` and runs the game with only that pack.
+`test` needs the `port` setting and a version of Jet Force Gemini: Recompiled new enough to start a level by name (it asks the game for its launch
+options first). It installs the pack as `mods/<mod id>.nrm` in the Jet Force Gemini: Recompiled folder and runs the game with only that pack.
 </Callout>

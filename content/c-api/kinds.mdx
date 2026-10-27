@@ -6,7 +6,7 @@ description: Object kinds in the Jet Force Gemini Recompiled C mod API - registe
 # Custom enemies and objects (kinds)
 
 A **kind** is an object type with its own code: a custom enemy, boss, talker, pickup or prop. A mod registers it once
-with callbacks; the port runs the callbacks for every object of that kind, in any level of any pack. Kinds are how
+with callbacks; Jet Force Gemini: Recompiled runs the callbacks for every object of that kind, in any level of any pack. Kinds are how
 enemy libraries work: one mod provides the enemies, other packs place them from Studio.
 
 <Callout type="info">
@@ -30,7 +30,7 @@ what it does. A kind is a type of its own: placing it changes nothing else, and 
 ## How kinds run
 
 - Each kind gets its own **behaviour number** from 0x100 up. The game sets up and runs objects by behaviour number,
-  and it skips numbers it doesn't know; the port catches the kinds' numbers and calls the kind's callbacks instead.
+  and it skips numbers it doesn't know; Jet Force Gemini: Recompiled catches the kinds' numbers and calls the kind's callbacks instead.
 - The kind's object type is a copy of a **base**: a stock object type whose model, hit area and drawing are close to
   what the kind needs. Hit flags must match the model; take the base from a stock object shaped like yours.
 - Each object of the kind gets a **data block** of `data_size` bytes for its state. Keep state there, never in static
@@ -65,7 +65,7 @@ typedef struct {
     int   offset;            ///< Where it goes in the placement bytes
 } JfgKindField;
 
-/** @brief Called by the port for each object of the kind. */
+/** @brief Called by Jet Force Gemini: Recompiled for each object of the kind. */
 typedef struct {
     void (*on_spawn)(JfgObject* obj);                       ///< Set up: health, hit area, first state
     void (*on_tick)(JfgObject* obj, int frames);            ///< Every tick

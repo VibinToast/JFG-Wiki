@@ -5,7 +5,7 @@ description: How Jet Force Gemini Recompiled gives levels and mods more memory t
 
 # Memory
 
-The game was written for 4 MB of RAM. The port runs the game's own code, so it keeps the game's limits unless it
+The game was written for 4 MB of RAM. Jet Force Gemini: Recompiled runs the game's own code, so it keeps the game's limits unless it
 lifts them on purpose. Bigger levels, more objects and mods that need memory all build on this.
 
 ## The memory map
@@ -20,16 +20,16 @@ lifts them on purpose. Bigger levels, more objects and mods that need memory all
 
 The graphics and video only reach the first 16 MB (24-bit addresses), so anything they draw from (display lists,
 vertices, textures) must sit below `0x81000000`. Data only the game's code reads can sit anywhere. Sounds can sit
-anywhere too: the port lets audio read all of it.
+anywhere too: Jet Force Gemini: Recompiled lets audio read all of it.
 
-## How the port gives the game more
+## How Jet Force Gemini: Recompiled gives the game more
 
 - **A bigger heap.** The game's main heap now ends at `0x80800000` instead of `0x80400000`: twice the room for
   levels, objects, models and sounds.
 - **Bigger fixed buffers.** Some buffers are a fixed size with no check on what goes in. A custom level's track
-  overflowed one and crashed the game; the port now asks for that buffer at about twice the size.
+  overflowed one and crashed the game; Jet Force Gemini: Recompiled now asks for that buffer at about twice the size.
 - **Keep it outside, draw it in passes.** The game only holds 64 blood splats and drops the oldest. With
-  "Blood stays", the port keeps the dropped ones in its own list and draws them in extra passes, 64 at a time, in
+  "Blood stays", Jet Force Gemini: Recompiled keeps the dropped ones in its own list and draws them in extra passes, 64 at a time, in
   the drawing space above. The game's limit stays in its code; the player sets how many stay.
 - **Mod memory.** A mod can allocate its own memory above `0x81000000`, which the game's heap never sees.
 

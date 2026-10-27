@@ -1,6 +1,6 @@
 ---
 title: 'Tutorial: a first code mod'
-description: Build a C code mod that listens to the port's events, using the mod template and RecompModTool.
+description: Build a C code mod that listens to Jet Force Gemini Recompiled's events, using the mod template and RecompModTool.
 ---
 
 # A first code mod
@@ -10,14 +10,14 @@ loop: write, build, install, read the log.
 
 <Callout type="warning">
 Code mods need a C toolchain for the N64's CPU. On Windows use **LLVM 18.1.8** (19.1.0 miscompiles MIPS), plus
-`ld.lld` and N64Recomp's **RecompModTool** built from the same fork as the port.
+`ld.lld` and N64Recomp's **RecompModTool** built from the same fork as Jet Force Gemini: Recompiled.
 </Callout>
 
 <Steps>
 ### Start from the mod template
 
 The template has `mod.toml`, `mod.ld`, a `Makefile`, `modding.h`, and the decomp's headers and symbol files as
-submodules. Add the port's `mod_api/jfg_api.h` to your include path.
+submodules. Add Jet Force Gemini: Recompiled's `mod_api/jfg_api.h` to your include path.
 
 ### Fill in the manifest
 
@@ -65,13 +65,13 @@ The `.nrm` lands in `build/`.
 
 ### Install and check
 
-Copy it into the port's `mods` folder, turn it on, and play. `bin/jfg_mods.log` shows your lines; **F9 › Mod API**
+Copy it into Jet Force Gemini: Recompiled's `mods` folder, turn it on, and play. `bin/jfg_mods.log` shows your lines; **F9 › Mod API**
 shows how often each event fires and how many mods listen.
 </Steps>
 
 ## Changing values the frame-rate-safe way
 
-The port runs at 30 or 60 fps. Multiply anything you change per tick by `jfg_get_tick_scale()` (1.0 at 30 fps, 0.5 at
+Jet Force Gemini: Recompiled runs at 30 or 60 fps. Multiply anything you change per tick by `jfg_get_tick_scale()` (1.0 at 30 fps, 0.5 at
 60), or use the `frames` argument of `jfg_on_game_tick`.
 
 ```c

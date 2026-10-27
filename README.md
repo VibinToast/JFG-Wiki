@@ -6,7 +6,7 @@ The modding wiki for **Jet Force Gemini: Recompiled**, served at <https://jfg.vi
 ## Edit a page
 
 Pages are Markdown with components (MDX) in `content/`. Each folder's `_meta.ts` sets the sidebar order and titles.
-Screenshots go in `public/img/`.
+Screenshots go in `public/img/`; then `npm run images` turns PNGs and JPEGs there into WebP and updates the pages.
 
 Components every page can use without importing:
 
@@ -14,7 +14,7 @@ Components every page can use without importing:
 |---|---|
 | `<Status s="built" />` (`partial`, `planned`) | How far a feature is |
 | `<Legend />` | The three statuses explained |
-| `<Figure src="/img/x.png" alt="..." caption="..." />` | A screenshot with a caption |
+| `<Figure src="/img/x.webp" alt="..." caption="..." />` | A screenshot with a caption |
 | `<Callout type="info">` (`warning`, `error`) | A note |
 | `<Steps>` with `###` headings inside | A numbered walk-through |
 | `<Cards>` / `<Cards.Card title href arrow />` | Link cards |
@@ -25,6 +25,7 @@ Components every page can use without importing:
 npm install
 npm run dev        # http://localhost:3100
 npm run build      # the static site in out/, with the search index
+npm run check-links   # after a build: every internal link, #anchor and image resolves (the deploy runs it too)
 ```
 
 ## Publish
@@ -42,3 +43,5 @@ Every push to `main` builds the site and publishes it (`.github/workflows/deploy
   (`content/unused/`, `public/unused/`): renders, animations, sprites and textures of cut content, rendered from the
   US ROM, like a cutting-room-floor site.
 - `zod` is pinned to 4.1.12 in `package.json` (`overrides`): newer 4.x versions break Nextra 4.6's layout validation.
+- `next`, `nextra` and `nextra-theme-docs` are pinned to exact versions for the same reason: a new release can break
+  the build on its own. Upgrade them on purpose, build, and check the site before pushing.

@@ -119,7 +119,7 @@ int jfg_is_paused(void);
 /**
  * @brief  The pause menu opened, or closed and the game goes on.
  * @target 4
- * @note   The pause menu's own functions can't be hooked in the port; these events are the way in.
+ * @note   The pause menu's own functions can't be hooked in Jet Force Gemini: Recompiled; these events are the way in.
  */
 RECOMP_CALLBACK("*", jfg_on_pause)   void my_pause(void);
 RECOMP_CALLBACK("*", jfg_on_unpause) void my_unpause(void);
@@ -145,7 +145,7 @@ void jfg_time_scale(float scale, int frames);
 ```c
 /**
  * @brief  Calls fn once, after a time in game ticks (paused time doesn't count).
- * @param  ticks  At 30 fps; the port scales at 60.
+ * @param  ticks  At 30 fps; Jet Force Gemini: Recompiled scales at 60.
  * @param  fn     Your function; gets arg back.
  * @return A timer handle, or -1.
  * @target 4

@@ -6,7 +6,7 @@ description: Code mods for Jet Force Gemini Recompiled - building them, hooks an
 # C mod API (`jfg_api.h`)
 
 Code mods are C compiled for the N64's CPU and packed into an `.nrm`. They can hook or replace any game function, and
-they get the port's own helpers and events through `mod_api/jfg_api.h`. API version 3.
+they get Jet Force Gemini: Recompiled's own helpers and events through `mod_api/jfg_api.h`. API version 3.
 
 Every helper, event and struct, today's and planned, is in the [C API reference](/c-api), area by
 area.
@@ -27,16 +27,16 @@ A step-by-step build is in [A first code mod](/tutorials/c-mod).
 
 ## Ways to change the game, best first
 
-1. **The JFG API**: events with values you can change or cancel, and helpers. The port's own features use the same
+1. **The JFG API**: events with values you can change or cancel, and helpers. Jet Force Gemini: Recompiled's own features use the same
    events and run first; mods follow in Mods-list order.
 2. **Hooks**: `RECOMP_HOOK("func")` runs before a function, `RECOMP_HOOK_RETURN("func")` after. Any number of mods
    can hook one function. Hooks observe: they can't change arguments or the return value.
 3. **A library mod** someone else made, for anything shared.
 4. **Replacing a function**: `RECOMP_PATCH`. Only one mod may replace a given function; `RECOMP_FORCE_PATCH` replaces
-   one the port itself patches.
+   one Jet Force Gemini: Recompiled itself patches.
 
 <Callout type="warning">
-**Functions the port needs:** replacing one of nine functions the port's features call (the main tick, fog, world
+**Functions Jet Force Gemini: Recompiled needs:** replacing one of the nine functions its features call (the main tick, fog, world
 tick, `controlPlatform`, `refuelControl`, the aim controls of overlays 15–17, `squadsFireWeapon`) is allowed, but
 those features turn off; `jfg_mods.log` and the in-game Mods menu say so in orange. A few menu, pause and map functions
 can't be hooked at all.

@@ -33,12 +33,12 @@ Smart squads (`behaviour` 0x11, used by many of the game's ant squads) only move
 can't see round. Those are the corners of **holes**, obstacles cut out of the area, and the area's own inward
 corners.
 
-<Figure src="/img/squads-no-cover.png" alt="A rectangular squad area with two crates inside it that are not holes" caption="No cover: the crates are only geometry. The ants crouch and fire and hardly ever move." />
+<Figure src="/img/squads-no-cover.webp" alt="A rectangular squad area with two crates inside it that are not holes" caption="No cover: the crates are only geometry. The ants crouch and fire and hardly ever move." />
 
 In a plain rectangle there is no such corner, so the members crouch and fire. Almost every squad in the game has an
 area shaped round its room, with holes for its pillars and crates.
 
-<Figure src="/img/squads-cover.png" alt="The same squad area with each crate cut out as a pink crossed hole" caption="With cover: each crate is a hole. The ants run between the crates, turn and come after the player, and keep out of the crates." />
+<Figure src="/img/squads-cover.webp" alt="The same squad area with each crate cut out as a pink crossed hole" caption="With cover: each crate is a hole. The ants run between the crates, turn and come after the player, and keep out of the crates." />
 
 A hole is a region of its own, wound **clockwise** round the obstacle, with a **region settings** entry (flags 1)
 that links it to the squad area. Members run to its corners and keep out of it, so they don't walk into the obstacle.
@@ -61,7 +61,7 @@ that links it to the squad area. Members run to its corners and keep out of it, 
 A patrol squad walks a route of **patrol points** and fights like a smart squad once it sees the player: it turns,
 takes cover and comes after them. Walking the route is play-tested; the switch to fighting follows the decomp.
 
-<Figure src="/img/squads-patrol.png" alt="The squad area with its two holes and a blue ring of six patrol points round the middle" caption="A patrol: a ring of six points. The squad starts from the point nearest to it and walks the ring until it spots the player." />
+<Figure src="/img/squads-patrol.webp" alt="The squad area with its two holes and a blue ring of six patrol points round the middle" caption="A patrol: a ring of six points. The squad starts from the point nearest to it and walks the ring until it spots the player." />
 
 How a squad walks its route:
 

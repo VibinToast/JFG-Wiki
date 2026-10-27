@@ -28,6 +28,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build   # postbuild writes out/_pagefind
+      - run: npm run check-links   # fails the deploy on a broken internal link, anchor or image
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

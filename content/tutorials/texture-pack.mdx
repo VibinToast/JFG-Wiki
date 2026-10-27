@@ -8,6 +8,8 @@ description: Dump the game's textures, upscale or repaint them, and play them as
 Dump the textures the game draws, upscale or repaint them, and load them back as a pack. Packs replace textures at
 draw time, at any resolution, and can be switched while playing.
 
+<Figure src="/img/tutorial-texture-pack.webp" alt="Four steps: dump the textures to bin/texture_dump, upscale them keeping the hash names, put them in bin/texture_packs/my_hd_pack, then pick the pack in Options or press F6" caption="From the game's textures to a pack. Each file keeps its hash name the whole way." />
+
 <Steps>
 ### Dump the textures
 
@@ -27,7 +29,7 @@ game finds it (suffixes an upscaler adds after the hash are fine).
 
 ### Make it a pack
 
-Put the images in a folder under `bin/texture_packs/<your pack>/`. The port writes the `rt64.json` that lists them
+Put the images in a folder under `bin/texture_packs/<your pack>/`. Jet Force Gemini: Recompiled writes the `rt64.json` that lists them
 the first time you pick the folder.
 
 ### Use it

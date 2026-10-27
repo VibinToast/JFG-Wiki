@@ -15,6 +15,8 @@ rest.
 In Studio, open the **Scripts** window and press **New script**. It makes `scripts/script1.lua` with a starting point.
 Every `.lua` in `scripts/` goes into the pack.
 
+<Figure src="/img/studio-scripts.webp" alt="The Scripts window: a New script button, the project's script, and a list of Jet Force Gemini: Recompiled's Lua helpers" caption="The Scripts window lists every Lua helper, so you don't have to look them up." />
+
 ### Greet the player
 
 ```lua filename="scripts/script1.lua"
@@ -61,13 +63,14 @@ jfg.on("tick", function(level)
 end)
 ```
 
-`level1` is the name of a level in your project; `jfg.level_id` turns it into the number the port gave it this run.
+`level1` is the name of a level in your project; `jfg.level_id` turns it into the number Jet Force Gemini: Recompiled gave it this run.
 Door id 1 is the **doorId** field of a door in that level.
 
 ### Save and play
 
 **Save script**, then **Play**. If something doesn't happen, look in `bin/jfg_mods.log`: errors name the script and
-line, and a handler that fails is switched off (the game keeps running).
+line, and a handler that fails is switched off (the game keeps running). More in
+[Troubleshooting](/troubleshooting#a-script-does-nothing).
 </Steps>
 
 ## Where to go from here

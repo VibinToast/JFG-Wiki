@@ -40,7 +40,7 @@ its files is enough.
 
 The game reads all its data through one table of 71 "assets". Some assets are *sets*: a table asset that lists offsets
 into a data asset (levels, tracks, object lists, models, textures, object definitions). At game start, before the
-game's first instruction, the port lays the data out again with every pack's changes and points the game at it. The
+game's first instruction, Jet Force Gemini: Recompiled lays the data out again with every pack's changes and points the game at it. The
 game never sees the difference.
 
 ```json
@@ -75,7 +75,7 @@ game never sees the difference.
 
 ### Appending and the content linker
 
-- `"append": "name"` adds a new entry after the set's last one. The port numbers it at start-up: the number the pack
+- `"append": "name"` adds a new entry after the set's last one. Jet Force Gemini: Recompiled numbers it at start-up: the number the pack
   was made for (`"expect"`) if it's free, else the lowest free one.
 - Numbers are kept between starts in `bin/mod_ids.json` by `mod:name`, so a save that names a pack's level still
   finds it as other packs come and go. Numbers of packs that aren't loaded stay reserved.
@@ -104,7 +104,7 @@ other data).
 
 ### Regions
 
-`"regions"` add Tribal and stats regions (a level header's byte `0x102`). The port numbers them 31–39 like appended
+`"regions"` add Tribal and stats regions (a level header's byte `0x102`). Jet Force Gemini: Recompiled numbers them 31–39 like appended
 entries (kept in `mod_ids.json`); past 39 a region is refused and its levels keep the region their headers have. A
 level joins one with a fixup:
 
@@ -113,7 +113,7 @@ level joins one with a fixup:
 ```
 
 A level in a region gets the game's region behaviour: the stats screen when an exit with bit 0 of its `0x1A` byte set
-leads into another region, the area title with `"name"` and `"world"` when it's entered, and continues. The port
+leads into another region, the area title with `"name"` and `"world"` when it's entered, and continues. Jet Force Gemini: Recompiled
 lengthens the game's Tribal table so mods' regions have 0 Tribals. Each level of a region needs its own index inside
 it (header byte `0x103`, 0–31). Studio writes all of this from the levels' **Planet**.
 

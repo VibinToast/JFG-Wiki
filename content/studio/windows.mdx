@@ -15,7 +15,7 @@ Every menu, tool and window in JFG-Studio, in the order you meet them.
 | File | Open project… | <kbd>Ctrl+O</kbd> | Pick a `.jfgproj` folder |
 | File | Save | <kbd>Ctrl+S</kbd> | Saves the project, levels, planets, kinds, galaxies, and triggers and weapons when changed |
 | File | Import geometry… | | Copies a `.glb` into `geometry/` and checks it |
-| File | Settings… | | The decomp, port and ROM paths |
+| File | Settings… | | The ROM and Jet Force Gemini: Recompiled paths |
 | Edit | Undo, Redo | <kbd>Ctrl+Z</kbd> <kbd>Ctrl+Y</kbd> | Per level |
 | Edit | Duplicate, Delete | <kbd>Ctrl+D</kbd> <kbd>Delete</kbd> | The selection |
 | Edit | Frame selection | <kbd>F</kbd> | The camera frames the selection, or the level from above |
@@ -25,7 +25,7 @@ Every menu, tool and window in JFG-Studio, in the order you meet them.
 
 ## Toolbar
 
-<Figure src="/img/studio-toolbar.png" alt="The toolbar" caption="Tools on the left; Local, Snap, Floor and the grid size; Play, the hero, Validate." />
+<Figure src="/img/studio-toolbar.webp" alt="The toolbar" caption="Tools on the left; Local, Snap, Floor and the grid size; Play, the hero, Validate." />
 
 | Tool | Key | Does |
 |---|---|---|
@@ -46,7 +46,7 @@ Every menu, tool and window in JFG-Studio, in the order you meet them.
 
 ## Scene
 
-<Figure src="/img/studio-scene.png" alt="The Scene window" caption="The Scene: the level's geometry, sky and fog, with every object." />
+<Figure src="/img/studio-scene.webp" alt="The Scene window" caption="The Scene: the level's geometry, sky and fog, with every object." />
 
 The open level in 3D: your geometry (or a stock track) with textures, vertex light and fog. Water is see-through
 blue, lava orange, kill floors red, invisible colliders a wireframe. Objects the catalog has a model for are drawn as
@@ -76,7 +76,7 @@ sound's range); lines join region corners, patrol links, members to their squadr
 
 ## Hierarchy
 
-<Figure src="/img/studio-hierarchy.png" alt="The Hierarchy: a squad with members, navigation regions, start points, exits, pickups" caption="Squads with their members under them, regions together, everything else in a list." width={320} />
+<Figure src="/img/studio-hierarchy.webp" alt="The Hierarchy: a squad with members, navigation regions, start points, exits, pickups" caption="Squads with their members under them, regions together, everything else in a list." width={320} />
 
 The open level's objects. Click to select, <kbd>Ctrl</kbd>+click to add, right-click for a menu.
 
@@ -92,7 +92,7 @@ Some of the game's levels share an object list: a change shows in each of them.
 
 ## Inspector
 
-<Figure src="/img/studio-inspector-key.png" alt="The Inspector for the yellow key" caption="The selected object: its type, name, position and fields." width={345} />
+<Figure src="/img/studio-inspector-key.webp" alt="The Inspector for the yellow key" caption="The selected object: its type, name, position and fields." width={345} />
 
 - **Name** is for you only (the game doesn't see it).
 - **Transform**: position, and **Drop to floor**.
@@ -119,7 +119,7 @@ any other.
 
 ## Level
 
-<Figure src="/img/studio-level.png" alt="The Level window" caption="The open level's settings." width={345} />
+<Figure src="/img/studio-level.webp" alt="The Level window" caption="The open level's settings." width={345} />
 
 - **Name**, **World** (0–15; 15 is free in the stock game) and **Track** (one of your `.glb` files).
 - **Planet**: puts the level in that planet's **region**. An exit that leaves the planet then shows the game's
@@ -134,7 +134,7 @@ any other.
 
 ## Project
 
-<Figure src="/img/studio-project.png" alt="The Project window: levels, planets, geometry, dependencies" caption="The project's levels, planets, geometry files and dependencies." />
+<Figure src="/img/studio-project.webp" alt="The Project window: levels, planets, geometry, dependencies" caption="The project's levels, planets, geometry files and dependencies." />
 
 Click a level to open it. **New level** makes one on your first geometry; **Edit a stock level…** adds to one of
 the game's levels (your objects are added; its own stay, or change once you turn on **Edit the game level's
@@ -142,7 +142,7 @@ objects** in the Hierarchy).
 
 ## Prefabs
 
-<Figure src="/img/studio-prefabs.png" alt="The Prefabs window" caption="Everything you can place: groups, your kinds, and every object type by category." />
+<Figure src="/img/studio-prefabs.webp" alt="The Prefabs window" caption="Everything you can place: groups, your kinds, and every object type by category." />
 
 - Search by name, hex id or field set. **Placeable** (on by default) hides only the types Studio can't place: every decoded type shows (all ten key colours), and a type no level places starts from an entry of a type with the same behaviour (**Start from** says *like ...*).
 - The health pickup is listed once per size, in the size's colour: small (blue), medium (purple), full (red).
@@ -160,20 +160,20 @@ objects** in the Hierarchy).
 
 ## Console
 
-<Figure src="/img/studio-console.png" alt="The Console" caption="Validate, the last build or play output, and every problem." />
+<Figure src="/img/studio-console.webp" alt="The Console" caption="Validate, the last build or play output, and every problem." />
 
 **Validate**, the error and warning counts, the last build, play or import-check output, then every problem. Click
 one that names an object to select it.
 
 ## Level Graph
 
-<Figure src="/img/studio-level-graph.png" alt="The Level Graph" caption="Every level's exits and where they lead; each planet's entry level." />
+<Figure src="/img/studio-level-graph.webp" alt="The Level Graph" caption="Every level's exits and where they lead; each planet's entry level." />
 
 A list of every level, the exits in it and where they lead, then each planet's entry level. Read-only.
 
 ## Planet
 
-<Figure src="/img/studio-planet.png" alt="The Planet window" caption="Planets on the map: place, route, unlock." />
+<Figure src="/img/studio-planet.webp" alt="The Planet window" caption="Planets on the map: place, route, unlock." />
 
 - **New planet**, and the planet to edit.
 - **A point of its own** (a new disc and route) or **Take over a stock point**.
@@ -191,14 +191,14 @@ for finding the right type.
 
 ## Kinds
 
-<Figure src="/img/studio-kinds.png" alt="The Kinds window" caption="A kind: a stock type's model and behaviour with your textures, at your size." width={345} />
+<Figure src="/img/studio-kinds.webp" alt="The Kinds window" caption="A kind: a stock type's model and behaviour with your textures, at your size." width={345} />
 
 **New kind** picks a base type. Then **Size**, **Export base textures** (to paint over; from your ROM, not for
 sharing), and per texture slot **Use file** (your `kinds/<kind>/<slot>.png`) or **Base**.
 
 ## Triggers
 
-<Figure src="/img/studio-triggers.png" alt="The Triggers window" caption="When … then …, per level." width={345} />
+<Figure src="/img/studio-triggers.webp" alt="The Triggers window" caption="When … then …, per level." width={345} />
 
 **When** (once per visit unless **Every time**):
 
@@ -228,14 +228,14 @@ Studio builds the triggers into a Lua script (`scripts/_triggers.lua`).
 
 ## Weapons
 
-<Figure src="/img/studio-weapons.png" alt="The Weapons window" caption="Tick a field to change it in this pack." width={345} />
+<Figure src="/img/studio-weapons.webp" alt="The Weapons window" caption="Tick a field to change it in this pack." width={345} />
 
 One section per weapon. Tick a field to change it: damage, delay, throw_delay, lifetime, spread_x, spread_y, speed.
 See the [Weapons API](/api/weapons) for which weapon uses which field.
 
 ## Scripts
 
-<Figure src="/img/studio-scripts.png" alt="The Scripts window" caption="A plain Lua editor, with the API listed below." />
+<Figure src="/img/studio-scripts.webp" alt="The Scripts window" caption="A plain Lua editor, with the API listed below." />
 
 **New script**, one tab per `scripts/*.lua`, and **Save script**. Every `.lua` in `scripts/` goes into the pack. See
 [Lua scripting](/api/lua).

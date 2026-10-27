@@ -1,0 +1,147 @@
+---
+title: Troubleshooting
+description: Common problems with Jet Force Gemini Recompiled mods and JFG-Studio, what causes them and how to fix them.
+---
+
+# Troubleshooting
+
+Most problems leave a line in the **mods log**, so start there. Find your problem below, read what the log says
+about it, and try the fix.
+
+<Callout type="info">
+**The mods log** is `bin/jfg_mods.log` in the Jet Force Gemini: Recompiled folder. Each line has a date and time, and new lines go at the
+end, so read the last start from the bottom up. It lists
+every pack the game loaded, what each one replaced or patched, the numbers its levels got, conflicts, and script
+errors. Search it for your mod id.
+</Callout>
+
+## Playing mods
+
+### My mod doesn't show in the Mods list
+
+| Check | Fix |
+|---|---|
+| The file is in the right folder | It goes in `mods/` next to the game's executable, not in `bin/` or a subfolder. Or install it from the launcher's **Mods** page. |
+| It's a `.nrm` (or a zip with a `mod.json` at its root) | The installer says *"… is not a mod"* or *"is not a valid zip or mod"* for anything else. Don't unzip a `.nrm`. |
+| Another mod has the same id | The runtime keeps one mod per id: *"Duplicate mod found"*. Remove the older copy (often an old build of your own pack). |
+| The game was restarted | The list is read at start-up. Close the game and start it again after adding a mod. |
+
+### It's in the list but has an error or won't turn on
+
+The error in the Mods list tells you which case it is:
+
+| Message | What it means |
+|---|---|
+| Missing dependency | The pack needs another pack that isn't installed. Its page lists what it needs. Install that too. |
+| Wrong dependency version | The other pack is installed, but it's an older version than this one needs. Update it. |
+| Mod requires a newer version of this project | Update [Jet Force Gemini: Recompiled](https://github.com/VibinToast/JetForceGemini-Recomp). |
+| Mod is for a different game | It's a mod for another recompiled game. |
+| ROM patch mod conflict | Two packs that each patch the whole ROM are on. Only one can be. Turn one off. See [below](#two-planet-packs-wont-run-together). |
+| Conflicts with other mod | Two code mods replace the same game function. The second one doesn't load. Turn one off. |
+| Failed to parse mod's mod.json, Invalid … in mod.json | The pack is damaged or was made by hand with a mistake. Rebuild it, or tell its author. |
+
+### It's on, but nothing in the game changed
+
+- **Restart the game.** Data mods, scripts, music and planets apply when the game starts. Only texture packs change
+  while you play.
+- **Look lower in the list.** When two packs replace the same thing, the one **higher** in the Mods list wins. The
+  log names the winner. See [When mods meet](/api/mods-together).
+- **An edit of a game level may have been skipped.** An edit made for different data (another pack changed the same
+  level first, in a different way) is skipped and logged rather than breaking the level. Search the log for *skipped*.
+- **A new planet needs a way in.** A pack's own planet opens from the start or from a portal, depending on how it was
+  made. Its page should say which.
+
+### Two planet packs won't run together
+
+A planet that takes over one of the game's own map points ships as a whole-ROM patch (`patch.bps`), and only one of
+those can be on at a time. Planets on a pack's own galaxy don't have this problem: any number of those load together.
+
+### My saves point at the wrong level
+
+Pack levels get their numbers at start-up and keep them in `bin/mod_ids.json`. If that file was deleted, numbers are
+handed out fresh, and a save made inside a pack level can point at another one. Restore the file from a backup if you
+have one. Then keep it: it's safe to back up, never safe to delete.
+
+### A texture pack doesn't match
+
+- The pack was made for the game's textures, but a data mod repainted one. A changed texture gets a new hash, and the
+  pack no longer finds it. Turn the data mod off, or ask the pack's author for a version that covers it.
+- The upscaler renamed the files. Each file has to **start** with the 16-digit hash from the dump. Text after the hash
+  is fine.
+- The pack chosen in **Options › Textures** beats every pack in the Mods list. Press <kbd>F6</kbd> to cycle.
+
+## The ROM
+
+### "This is not a valid ROM file" or "the wrong version"
+
+Jet Force Gemini: Recompiled and JFG-Studio both need the **unmodified US release** of Jet Force Gemini. The European and Japanese
+releases, and ROMs that were patched or trimmed, are refused.
+
+**Byte order doesn't matter.** `.z64`, `.v64` and `.n64` dumps all work. Both read each one and
+convert it to `.z64` order by themselves, so you don't need to convert it first. A ROM that's refused in every byte
+order is another release or a modified copy.
+
+### Studio says "is not the US release this version supports"
+
+Studio checks the ROM's SHA-1 after fixing the byte order, as Jet Force Gemini: Recompiled does. Point the `rom` setting at a clean US dump:
+**File › Settings…** or `JFG-Studio-cli settings set rom <path>`.
+
+## JFG-Studio
+
+### "No catalog"
+
+The Prefabs, Models, Kinds and Planet windows need the **catalog**, which Studio builds from your ROM the first time
+it needs it. "No catalog" is followed by the reason:
+
+| Reason | Fix |
+|---|---|
+| No ROM set | Open **Help › Setup…** and pick your ROM, or set `rom` in **File › Settings…**. |
+| Not the US release, unknown byte order | See [The ROM](#the-rom). |
+
+After fixing a path, restart Studio, or rebuild the catalog with `JFG-Studio-cli catalog`. Your own geometry still opens in
+the Scene without a catalog.
+
+### Play does nothing, or the game starts somewhere else
+
+- Set the `port` setting to the Jet Force Gemini: Recompiled folder, the one with the game's executable.
+- **Play** needs a version of Jet Force Gemini: Recompiled new enough to start a level by name. Update it if Studio says it's
+  too old.
+- Fix every error in **Build › Validate** first. Studio won't build a pack with errors.
+- Studio installs the pack as `mods/<mod id>.nrm` and runs only that pack. If you have an older copy under another file
+  name, remove it (see *Duplicate mod found* above).
+
+### My objects are floating, buried or fell through the floor
+
+After you re-import a level's geometry, objects stay where they were. **Validate** lists the ones the new shape left
+buried, floating, sunk or over a pit. Move them, or use **Drop to floor** in the Inspector.
+
+### I can't depend on another pack
+
+A dependency's id may only use letters, digits and `_`. An id with a dot (`yourname.library`) can't be depended on:
+the game won't open a pack that names one, and the launcher says the dependency isn't in the mods folder. Studio's
+Validate flags such ids.
+
+## Scripts
+
+### A script does nothing
+
+1. Search the mods log for `script <your mod id>`. A line says how many scripts and handlers loaded.
+2. An error names the script file and line. A handler that errors is **turned off** for the rest of the run
+   (*that "tick" handler is turned off*), and the game keeps going. Fix it and restart.
+3. `… isn't valid JSON - its scripts are off` means the pack's script list is damaged. Rebuild the pack.
+4. Use `jfg.log(...)` to write your own lines to the log while you test.
+
+### `jfg.spawn` returns false
+
+The second value says why. A level can take at most 64 spawned objects. Spawned objects aren't saved, so don't spawn
+things the game remembers, such as squadrons or crates that stay open.
+
+### A level name gives nil
+
+`jfg.level_id("level1")` takes the name of a level **in your project**, not its display name. Stock levels are
+`"stock:21"`.
+
+## Still stuck?
+
+Look at the [example world](/studio/example-world): it does most things a pack can do, and it builds and plays. If you
+report a problem, include `bin/jfg_mods.log` and the pack (or the project).

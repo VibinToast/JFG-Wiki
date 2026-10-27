@@ -5,6 +5,7 @@ import { Head } from 'nextra/components';
 import { getPageMap } from 'nextra/page-map';
 import 'nextra-theme-docs/style.css';
 import './jfg.css';
+import { OG_IMAGES } from '../components/og';
 
 // The three faces of the wiki's Jet Force Gemini look: a squared display face for headings and the logo, a plain
 // sans for reading, a mono for code.
@@ -16,6 +17,8 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://jfg.vibintoast.com'),
   title: { default: 'JFG Modding Wiki', template: '%s · JFG Modding Wiki' },
   description: 'Make planets, levels, enemies, music, scripts and texture packs for Jet Force Gemini: Recompiled.',
+  openGraph: { type: 'website', siteName: 'JFG Modding Wiki', images: OG_IMAGES },
+  twitter: { card: 'summary_large_image', images: OG_IMAGES.map((i) => i.url) },
 };
 
 const RECOMP_REPO = 'https://github.com/VibinToast/JetForceGemini-Recomp';

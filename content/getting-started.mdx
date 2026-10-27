@@ -10,14 +10,14 @@ What you need to play mods, to make them, and where everything goes.
 ## Playing mods
 
 <Steps>
-### Install the port
+### Install Jet Force Gemini: Recompiled
 
 Install **[Jet Force Gemini: Recompiled](https://github.com/VibinToast/JetForceGemini-Recomp)** (its Releases page
 has the downloads) and point it at your own US ROM.
 
 ### Put the mod in the mods folder
 
-Copy the `.nrm` into the port's `mods` folder (next to the game's executable), or install it from the launcher's
+Copy the `.nrm` into the `mods` folder of Jet Force Gemini: Recompiled (next to the game's executable), or install it from the launcher's
 Mods page.
 
 ### Turn it on and order it
@@ -32,55 +32,65 @@ Data mods, scripts and planets apply when the game starts; texture packs apply a
 
 <Callout type="info">
 **Where to look when something's off:** `bin/jfg_mods.log` records every pack the game loaded, what it replaced, the
-numbers its levels got, conflicts, and script errors.
+numbers its levels got, conflicts, and script errors. [Troubleshooting](/troubleshooting) covers the common problems.
 </Callout>
 
 ## Making mods
 
 | You need | For |
 |---|---|
+| **[JFG-Studio](https://github.com/VibinToast/JFG-Studio/releases)** | The level and pack editor. |
 | Your own **US ROM** of Jet Force Gemini | Studio reads it to show the game's levels, objects and models while you edit; the build reads the entries your pack copies. |
-| **[JFG-Studio](https://github.com/VibinToast/JFG-Studio)** (Python 3.12) | The level and pack editor. |
-| The **decomp** checkout | Studio uses its `tools/jfgformats` to read and write the game's formats. |
 | **[Jet Force Gemini: Recompiled](https://github.com/VibinToast/JetForceGemini-Recomp)** | Studio's Play button installs your pack there and starts the game in your level. |
 | **Blender 5.2+** (optional) | Modelling level geometry; the [jfg64 add-on](/blender) helps. |
 | LLVM 18.1.8 and RecompModTool (optional) | Only for [C code mods](/api/c). |
 
 ## Installing JFG-Studio
 
-JFG-Studio's source is on GitHub: [VibinToast/JFG-Studio](https://github.com/VibinToast/JFG-Studio).
+<Steps>
+### Download it
 
-```powershell
-git clone https://github.com/VibinToast/JFG-Studio.git
-cd JFG-Studio
-python -m venv .venv
-.venv\Scripts\python -m pip install -e .[dev]
-.venv\Scripts\python -m jfgstudio
-```
+Get the latest zip from JFG-Studio's [Releases](https://github.com/VibinToast/JFG-Studio/releases) page and unzip it
+anywhere. There's nothing else to install.
 
-On Windows, `studio.bat` does the last step for you. Then set the three paths in **File › Settings…** (or
-`jfgstudio settings set <key> <path>`):
+### Start it
 
-| Setting | Points at | Found automatically |
-|---|---|---|
-| `decomp` | The decomp checkout (with `tools/jfgformats`) | A `Decomp` folder next to JFG-Modding-Tools |
-| `port` | The Jet Force Gemini: Recompiled folder | No |
-| `rom` | Your US ROM (z64, v64 or n64 byte order) | `baserom.us.z64` or `jfg-us.z64` in the workspace |
+Run **`JFG-Studio.exe`**, the editor. `JFG-Studio-cli.exe` next to it is the [command line](/studio/cli) and the
+[AI agent server](/studio/ai-agents). It's a separate exe because Windows programs are either windowed or console,
+never both ([why](/studio/cli#why-there-are-two-exes)). If you only use the editor, you can ignore it.
 
-The first time Studio needs it, it builds a **catalog** from your ROM in your user data folder: the game's levels,
-object types, models and planet map. It stays on your machine. Without it the Scene still opens your own geometry,
-but the Prefabs, Models and Kinds windows say "No catalog".
+### Point it at your ROM and the game
+
+The first time Studio starts, a **Welcome** window asks for two things, and checks each one as you pick it:
+
+| Asks for | Checks |
+|---|---|
+| Your Jet Force Gemini ROM | It's the unmodified US release. Any byte order works (`.z64`, `.v64` or `.n64`). |
+| The Jet Force Gemini: Recompiled folder (optional) | The game is there, and its version is new enough for packs (1.3.0 or newer). Play needs it, and the editor uses the game's fonts from it. |
+
+<Figure src="/img/studio-setup.webp" alt="The Welcome to JFG-Studio window: a ROM field and a Jet Force Gemini: Recompiled folder field, each with a Browse button, and Save and build the catalog and Later buttons" caption="The Welcome window on a first start." width={560} />
+
+Press **Save and build the catalog**. Studio reads your ROM once and builds its **catalog** in your user data folder:
+the game's levels, object types, models and planet map. It takes a few seconds and stays on your machine.
+</Steps>
+
+**Later** closes the window, and it opens again at the next start until a ROM is set. You can change the paths any
+time in **File › Settings…**, or open the window again from **Help › Setup…**. Without a catalog, the Scene still
+opens your own geometry, but the Prefabs, Models and Kinds windows say "No catalog". Restart Studio after setting the
+game folder to get the game's fonts.
 
 ## Where things go
 
+`<Recompiled folder>` is the Jet Force Gemini: Recompiled folder, the one with the game's executable.
+
 | Path | What |
 |---|---|
-| `<port>/mods/` | Installed packs (`.nrm`) |
-| `<port>/bin/jfg_mods.log` | The mods log |
-| `<port>/bin/mod_ids.json` | Numbers the packs' levels and content got (keep it) |
-| `<port>/bin/saves/<save>_worlds.json` | Opened and completed pack planets, per save file |
-| `<port>/bin/texture_packs/` | Folder texture packs |
-| `<port>/bin/texture_dump/` | Dumped textures: the game's, and `texture_dump/<mod id>/` for each pack's own |
+| `<Recompiled folder>/mods/` | Installed packs (`.nrm`) |
+| `<Recompiled folder>/bin/jfg_mods.log` | The mods log |
+| `<Recompiled folder>/bin/mod_ids.json` | Numbers the packs' levels and content got (keep it) |
+| `<Recompiled folder>/bin/saves/<save>_worlds.json` | Opened and completed pack planets, per save file |
+| `<Recompiled folder>/bin/texture_packs/` | Folder texture packs |
+| `<Recompiled folder>/bin/texture_dump/` | Dumped textures: the game's, and `texture_dump/<mod id>/` for each pack's own |
 | `my_planet.jfgproj/` | A Studio project ([format](/studio/project-format)) |
 | `my_planet.jfgproj/build/` | The pack Studio built |
 

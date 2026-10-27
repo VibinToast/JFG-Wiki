@@ -65,12 +65,12 @@ These hold for every area, built and planned.
 |---|---|
 | Names | Everything starts with `jfg_`, then the area: `jfg_level_`, `jfg_weapon_`, `jfg_object_`... Events start with `jfg_on_`. Helpers from versions 1-3 keep their original names (`jfg_get_level`) |
 | Stable | A released helper, event or struct never changes. New fields go at the end of a struct and come with a higher `JFG_API_VERSION` |
-| Events with values | The payload is a struct you can change. Set `cancel` to 1 to stop the game's action. The port's own features run first, then mods in Mods-list order; the last mod has the final say |
+| Events with values | The payload is a struct you can change. Set `cancel` to 1 to stop the game's action. Jet Force Gemini: Recompiled's own features run first, then mods in Mods-list order; the last mod has the final say |
 | Game objects | `JfgObject*`: the game's own object, opaque. Use the helpers, not raw offsets. Events from versions 1-3 pass the same pointer as `void*` |
 | Things the API makes | Weapons, kinds, sounds, music, triggers, text and UI elements are `int` handles. -1 means none or failed |
 | Content names | `"<mod id>:<type>/<name>"`, such as `"yourname_pack:kind/fire_ant"`. A name without a mod id is your own mod's. Stock content is `"stock:<type>/<number>"` |
 | Registering | Kinds, weapons, sounds and music are registered in `jfg_on_register`, which fires once after mods load. Registering later returns -1 |
-| Frame rate | Tick events pass `frames` (2 at 30 fps, 1 at 60). Values "per tick" or "in frames" are at 30 fps; the port scales them. Multiply your own per-tick changes by `jfg_get_tick_scale()` |
+| Frame rate | Tick events pass `frames` (2 at 30 fps, 1 at 60). Values "per tick" or "in frames" are at 30 fps; Jet Force Gemini: Recompiled scales them. Multiply your own per-tick changes by `jfg_get_tick_scale()` |
 | Units | Positions in the game's world units (`JfgVec3`, floats). Angles in game units: 65536 is a full turn. Colours `0xRRGGBBAA` |
 | Heroes | Character 0 Vela, 1 Juno, 2 Lupus. Player index 0 is the story player; 1-3 exist in multiplayer |
 | Threads | Everything runs on the game thread, between or inside the game's ticks. Don't block |
@@ -92,7 +92,7 @@ enum { JFG_VELA = 0, JFG_JUNO = 1, JFG_LUPUS = 2 };
 
 ## Version roadmap
 
-Proposed, in the order the port's work is planned. Planned entries carry their `@target` version.
+Proposed, in the order Jet Force Gemini: Recompiled's work is planned. Planned entries carry their `@target` version.
 
 | Version | Theme | Main additions | Status |
 |---|---|---|---|

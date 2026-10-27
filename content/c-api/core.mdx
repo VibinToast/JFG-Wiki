@@ -27,7 +27,7 @@ read game data directly.
 ```c
 /**
  * @brief  The API version the running game provides.
- * @return 3 in today's port. Compare with JFG_API_VERSION, the version your mod was built against.
+ * @return 3 in today's Jet Force Gemini: Recompiled. Compare with JFG_API_VERSION, the version your mod was built against.
  * @since  1
  * @note   A mod that calls anything newer than the game provides must check this first and switch the
  *         feature off, or the game refuses the mod for a missing import.
@@ -155,6 +155,6 @@ short health = *(short*)((char*)jfg_object_hit_data(obj) + JFG_HIT_HEALTH);
 ```
 
 <Callout type="info">
-Prefer the helpers over offsets: a helper keeps working if the port moves something; an offset is only as stable as
+Prefer the helpers over offsets: a helper keeps working if Jet Force Gemini: Recompiled moves something; an offset is only as stable as
 the game's own layout.
 </Callout>
