@@ -20,6 +20,8 @@ area.
   `[inputs]` (the ELF, the symbol files, `additional_files`).
 - `additional_files` stores each file by its name only (folders are dropped), so names must be unique. To keep
   folders, add them to the finished `.nrm` with a zip tool: an `.nrm` is a zip.
+- The Mods menu's picture of a mod is `thumb.png` (or `thumb.dds`, which the game takes first) at the root of the
+  `.nrm`: list it in `additional_files`. Make it square, 512 x 512 for example; without one the tile is blank.
 - Game variables you use must be declared `extern` with the decomp's exact type: a wider type reads and writes its
   neighbours.
 
@@ -46,7 +48,7 @@ can't be hooked at all.
 
 ```c
 #include "modding.h"
-#include "jfg_api.h"   // JFG_API_VERSION 3
+#include "jfg_api.h"   // JFG_API_VERSION 4
 ```
 
 | Helper | Since | What |

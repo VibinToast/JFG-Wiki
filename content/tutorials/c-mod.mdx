@@ -33,6 +33,13 @@ game_id = "jet-force-gemini"
 minimum_recomp_version = "1.1.8"
 ```
 
+For a picture in the game's Mods menu, put a square `thumb.png` (512 x 512 works) next to `mod.toml` and list it
+under `[inputs]`:
+
+```toml
+additional_files = ["thumb.png"]
+```
+
 ### Write the code
 
 ```c filename="src/main.c"
