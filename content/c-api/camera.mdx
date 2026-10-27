@@ -9,7 +9,9 @@ Where the camera is, and taking it over for intros, boss reveals and scripted sc
 
 | Entry | Brief | Status |
 |---|---|---|
-| `jfg_camera_get` | Camera position, target and field of view | <Status s="planned" /> |
+| [`jfg_camera_get`](/c-api/heroes#jfg_camera_get-) | The camera the hero steers by: position, yaw, pitch | <Status s="built" /> |
+| [`jfg_camera_set`](/c-api/heroes#jfg_camera_set-) | Put the camera somewhere this tick | <Status s="built" /> |
+| [`jfg_camera_set_distance`](/c-api/heroes#jfg_camera_set_distance-) | The dual-stick camera's distance | <Status s="built" /> |
 | `jfg_camera_look_at` | Move the camera to a shot | <Status s="planned" /> |
 | `jfg_camera_follow` | Follow an object from an offset | <Status s="planned" /> |
 | `jfg_camera_path` | Fly along points | <Status s="planned" /> |
@@ -25,23 +27,18 @@ While a mod holds the camera, the player keeps control unless the mod also calls
 camera is released on a level change.
 </Callout>
 
-### jfg_camera_get <Status s="planned" />
+### jfg_camera_get, jfg_camera_set, jfg_camera_set_distance <Status s="built" />
+
+Built with the [Custom heroes](/c-api/heroes#camera) helpers (version 4):
 
 ```c
-/** @brief The camera. */
-typedef struct {
-    JfgVec3 pos;      ///< Where it is
-    JfgVec3 target;   ///< What it looks at
-    float   fov;      ///< Vertical field of view in degrees
-    int     scripted; ///< 1 while a mod holds it
-} JfgCamera;
-
-/**
- * @brief  The camera now, for the player's view.
- * @target 9
- */
-void jfg_camera_get(int player, JfgCamera* out);
+void jfg_camera_get(JfgCameraView* out);           // position, yaw, pitch of the camera the hero steers by
+void jfg_camera_set(const JfgCameraSet* camera);   // this tick: position, focus, roll, field of view
+void jfg_camera_set_distance(float scale);         // the port's dual-stick camera, further out or in
 ```
+
+`jfg_camera_set` already does most of what the scripted-camera entries below plan: a mod that sets it every tick
+holds the camera, and the game's camera carries on when it stops.
 
 ### jfg_camera_look_at <Status s="planned" />
 

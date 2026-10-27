@@ -12,8 +12,9 @@ after the game's own, follows the player's volume settings, and pauses with the 
 |---|---|---|
 | `jfg_on_sound_play` | A sound effect is about to start | <Status s="built" /> |
 | `jfg_sound_register` | A pack sound (WAV or OGG) | <Status s="planned" /> |
-| `jfg_sound_play` | Play a stock or pack sound | <Status s="planned" /> |
-| `jfg_sound_stop` | Stop a playing sound | <Status s="planned" /> |
+| [`jfg_sound_play`, `jfg_sound_loop`](/c-api/heroes#sound) | Play a mod's own sound file | <Status s="built" /> |
+| [`jfg_sound_set`, `jfg_sound_stop`](/c-api/heroes#sound) | Change or stop a playing sound | <Status s="built" /> |
+| Stock sounds and sounds at a place | Play the game's own sounds, positioned | <Status s="planned" /> |
 | `jfg_sound_emitter_add` | A looping sound at a place | <Status s="planned" /> |
 | `jfg_music_register` | A pack music track (OGG, loop points) | <Status s="partial" /> |
 | `jfg_music_play`, `jfg_music_stop` | Play a pack track; back to the level's | <Status s="partial" /> |
@@ -54,19 +55,19 @@ RECOMP_CALLBACK("*", jfg_on_sound_play) void my_sound(JfgSoundPlay* s);
 int jfg_sound_register(const char* name, const char* file);
 ```
 
-### jfg_sound_play, jfg_sound_stop <Status s="planned" />
+### jfg_sound_play, jfg_sound_loop, jfg_sound_set, jfg_sound_stop <Status s="built" />
+
+A mod's own sound effects, OGG or WAV files named in its `jfg_sounds.json`, with volume, pan and pitch (version 4).
+The full entries are with the [Custom heroes](/c-api/heroes#sound) helpers.
 
 ```c
-/**
- * @brief  Plays a sound: a stock sound number (under 0x10000) or a pack handle.
- * @param  pos     Where it plays from, or NULL for no position (UI sounds).
- * @param  volume  0.0 to 1.0, before the player's sound volume.
- * @return A playing-sound handle for jfg_sound_stop, or -1.
- * @target 5 (stock sounds), 9 (pack sounds)
- */
-int  jfg_sound_play(int sound, const JfgVec3* pos, float volume);
-void jfg_sound_stop(int playing);
+int  jfg_sound_play(const char* name, float volume, float pan, float pitch); // a voice, 0 if no such sound
+int  jfg_sound_loop(const char* name, float volume, float pan, float pitch);
+int  jfg_sound_set(int voice, float volume, float pan, float pitch);          // 1 while it plays
+void jfg_sound_stop(int voice);
 ```
+
+Playing the game's own sounds, and sounds placed in the world, are still planned.
 
 ### jfg_sound_emitter_add <Status s="planned" />
 

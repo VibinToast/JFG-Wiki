@@ -8,8 +8,17 @@ description: Heroes, their position, health and jetpack, character bodies, Floyd
 The heroes as the player controls them: who is playing, where they are, their health and abilities, and the
 buttons. Player index 0 is the story player; 1-3 exist in multiplayer.
 
+Replacing a hero with your own (its movement, model, attacks and health) has its own page:
+[Custom heroes](/c-api/heroes).
+
 | Entry | Brief | Status |
 |---|---|---|
+| [`jfg_hero_takeover`, `jfg_on_hero_control`](/c-api/heroes#taking-a-hero-over) | Run a hero yourself | <Status s="built" /> |
+| [`jfg_hero_game_control`](/c-api/heroes#jfg_hero_game_control-) | Hand it back to the game's code, tick by tick | <Status s="built" /> |
+| [`jfg_hero_select_weapon`](/c-api/heroes#jfg_hero_select_weapon-) | Next or previous weapon | <Status s="built" /> |
+| [`jfg_hero_heads`](/c-api/heroes#jfg_hero_heads-) | Heads collected | <Status s="built" /> |
+| [`jfg_input_get`](/c-api/heroes#jfg_input_get-) | The controller this tick | <Status s="built" /> |
+| [`jfg_controls_get`](/c-api/heroes#jfg_controls_get-) | Modern controls, mouse, physical buttons | <Status s="built" /> |
 | `jfg_on_boss_fight_control` | Each tick of a boss fight's controls | <Status s="built" /> |
 | `jfg_on_sidekick_tick` | Each tick Floyd is updated | <Status s="built" /> |
 | `jfg_player_count` | Players in the game | <Status s="planned" /> |

@@ -6,6 +6,7 @@ export default {
   world: 'World map',
   level: 'Levels',
   player: 'Players and input',
+  heroes: 'Custom heroes',
   weapons: 'Weapons',
   objects: 'Objects',
   kinds: 'Custom enemies (kinds)',

@@ -14,7 +14,10 @@ and enough health can be hit. Jet Force Gemini: Recompiled watches that and turn
 
 | Entry | Brief | Status |
 |---|---|---|
-| `jfg_object_get_health`, `jfg_object_set_health` | Health | <Status s="planned" /> |
+| [`jfg_object_health`, `jfg_object_set_health`](/c-api/heroes#jfg_object_health-jfg_object_set_health-) | Health | <Status s="built" /> |
+| [`jfg_damage_sphere`](/c-api/heroes#jfg_damage_sphere-) | Damage enemies and breakables in a sphere | <Status s="built" /> |
+| [`jfg_objects_near`, `jfg_enemies_near`, `jfg_enemy_type`](/c-api/heroes#jfg_objects_near-jfg_enemies_near-jfg_enemy_type-) | What's near a point | <Status s="built" /> |
+| [`jfg_object_blast_damage`](/c-api/heroes#jfg_object_blast_damage-) | Blast damage an object took | <Status s="built" /> |
 | `jfg_object_set_hit` | Give an object a hit area and health | <Status s="planned" /> |
 | `jfg_object_set_hit_scale` | How much damage a hit sphere passes on | <Status s="planned" /> |
 | `jfg_object_damage` | Hurt an object from code | <Status s="planned" /> |
@@ -27,17 +30,13 @@ and enough health can be hit. Jet Force Gemini: Recompiled watches that and turn
 
 ## Health
 
-### jfg_object_get_health, jfg_object_set_health <Status s="planned" />
+### jfg_object_health, jfg_object_set_health <Status s="built" />
+
+Built with the [Custom heroes](/c-api/heroes#damage) entries (version 4), with the damage helpers:
 
 ```c
-/**
- * @brief  An object's health. Setting 0 kills it.
- * @return -1 for objects that can't be hurt.
- * @target 5
- * @note   Shots only hit targets with enough health: give kinds their health in on_spawn.
- */
-int  jfg_object_get_health(JfgObject* obj);
-void jfg_object_set_health(JfgObject* obj, int health);
+int  jfg_object_health(void* object);              // 256 a unit; -1 if it has no health
+void jfg_object_set_health(void* object, int health); // -0x8000 makes an enemy burst (an overkill)
 ```
 
 ### jfg_object_set_hit <Status s="planned" />

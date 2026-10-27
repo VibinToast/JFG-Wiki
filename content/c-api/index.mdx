@@ -5,7 +5,7 @@ description: Function-by-function reference of jfg_api.h, the C mod API of Jet F
 
 # C API reference (`jfg_api.h`)
 
-Every helper, event and struct of the C mod API, grouped by area: what exists today (API version 3) and what's
+Every helper, event and struct of the C mod API, grouped by area: what exists today (API version 4) and what's
 planned. For building a code mod, hooks and patches, see [C mod API](/api/c); for the Lua side, [Lua scripting](/api/lua).
 
 <Legend />
@@ -13,7 +13,7 @@ planned. For building a code mod, hooks and patches, see [C mod API](/api/c); fo
 <Callout type="warning">
 **Planned entries are a design, not a promise.** Names, arguments and the version they land in can change until they
 are built. Only <Status s="built" /> entries are in the header you compile against. Check `jfg_api_version()` before
-calling anything newer than version 3.
+calling anything newer than version 4.
 </Callout>
 
 ## Areas
@@ -24,6 +24,7 @@ calling anything newer than version 3.
   <Cards.Card title="World map: planets, galaxies, choosing a world" href="/c-api/world" arrow />
   <Cards.Card title="Levels: changing, fog, sky, name, exits, triggers" href="/c-api/level" arrow />
   <Cards.Card title="Players and input: heroes, health, buttons" href="/c-api/player" arrow />
+  <Cards.Card title="Custom heroes: takeover, controls, collision, damage, sounds" href="/c-api/heroes" arrow />
   <Cards.Card title="Weapons: stats, ammo, new weapons, fire events" href="/c-api/weapons" arrow />
   <Cards.Card title="Objects: spawn, move, animate, find" href="/c-api/objects" arrow />
   <Cards.Card title="Custom enemies and objects: kinds" href="/c-api/kinds" arrow />
