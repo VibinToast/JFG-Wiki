@@ -37,6 +37,8 @@ Every push to `main` builds the site and publishes it (`.github/workflows/deploy
 
 ## Rules for content
 
-- Nothing from the game: no ROM data, no exported models, textures or tracks. Screenshots show Studio and the example
-  world's own geometry only.
+- Nothing from the game, with one exception: no ROM data, no exported models, textures or tracks. Screenshots show
+  Studio and the example world's own geometry. The exception (owner, 2026-10-26) is the unused content section
+  (`content/unused/`, `public/unused/`): renders, animations, sprites and textures of cut content, rendered from the
+  US ROM, like a cutting-room-floor site.
 - `zod` is pinned to 4.1.12 in `package.json` (`overrides`): newer 4.x versions break Nextra 4.6's layout validation.

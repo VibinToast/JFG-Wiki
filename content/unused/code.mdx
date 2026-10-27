@@ -1,0 +1,42 @@
+---
+title: Code with no way in
+description: A flying ship with a top-down camera, objects with code but no definition, removed features whose calls remain, and helpers nothing calls.
+---
+
+# Code with no way in
+
+146 functions are named nowhere else in the code or data (133 with their original names, about 45 of them library
+leftovers). The interesting ones:
+
+## A flying ship with a top-down camera
+
+- The whole of overlay 54 (`shipControl` and two helpers) plus `cameraTopDown` (0x8002EB6C). Nothing references
+  overlay 54, so it never loads.
+- It steers with the stick, boosts with R (× 1.5), banks, and holds its height at the level's floor + 0x28.
+- To restore it: `controlPlayer` picks the hero's control by the character byte (0 Vela, 1 Juno, 2 Lupus, 3 the
+  hover ship). A new case calling `shipControl`, plus a level, would bring it back. Level 90, a top-down test level
+  nothing reaches, is the likely home.
+
+## Objects with code but no definition
+
+The frog, buoy, timed target, sky switch and no-gravity box: see
+[Props and vehicles](/unused/props#code-with-no-object).
+
+## Removed features whose calls remain
+
+- `controlDecapitatePlayer` (0x80032128) is empty, but is still called when a shuriken hits a player.
+- `mantisEditMenu` (overlay 67) is empty: a boss edit menu was removed.
+
+## Helpers nothing calls
+
+- A debug level select's remains: `levelGetNextOfWorld`, `levelGetPrevOfWorld`, `levelGetName`.
+- A "level effects" system: `fxAddLevelEffect` and its allocator, and `shockwaveStart`.
+- The Controller Pak file manager: `packFormat`, `packDirectory`, `packCopyFile` and more. Loading and saving a
+  character are stubs that return 1 in the US version.
+- `subtitlesEnable` is never called, so subtitles can't be switched off.
+- `mainStartGame`, `mainGetNextLevel`, `mainLoadGame`, `mainEraseFlashRom` and others in the main loop's file.
+
+## Empty or dead overlays
+
+- Overlays 21 and 56 are empty slots.
+- Overlay 144 is a 16-byte copy-protection stub.

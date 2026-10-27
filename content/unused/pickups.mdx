@@ -1,0 +1,63 @@
+---
+title: Unused pickups and weapon 15
+description: A cut sixteenth weapon meant as a proximity mine, five key colours nothing uses, and pickups never placed, with what each does when placed.
+---
+
+# Pickups and weapon 15
+
+## Weapon 15, a cut proximity mine
+
+The weapon table has a complete sixteenth row (weapon 15: speed 24, ammo 100 / 20, start 100), but nothing gives it.
+Its pickup (0x126) is never placed, and no squadron drops it.
+
+There is more of it: a front-end icon (0x247) and a second proximity mine description in the menu text (strings
+254-258). The timed mines' hint mentions a "proximity mode", so it may have been folded into the timed mines.
+
+**What it does as shipped** (checked in the decomp):
+- Given to the hero, weapon 15 fires the default laser bolt, not mines: the code that fires weapons has no case
+  for it.
+- The HUD names it with text 72, "Pistol Ammo", because there are only 15 weapon names.
+- Its pickup works as a plain 12-byte list entry.
+
+So the mine was planned (table row, icon, text) but its firing code was never written. **Seen in the port:** fired
+through the timed mines' code, with a copy of the remote mines' row and its name pointed at "Proximity Mine", the
+hero throws up to 10 mines and they go off.
+
+<Shots>
+<Shot src="/unused/objects/01A9_eng_box.webp" title="0x126 weapon 15 pickup (model 425)">The pickup for weapon 15; never placed.</Shot>
+<Shot src="/unused/objects/023F_HiProxyMine.webp" title="0x247 proximity mine icon (model 575)">The mine's front-end (inventory) icon.</Shot>
+</Shots>
+
+## Five key colours nothing uses
+
+The game has ten key colours. Yellow, red and magenta keys are placed in levels; green and blue come from chests
+(see [Turned out to be used](/unused#turned-out-to-be-used)). The other five, **light blue, lime, purple, tango and
+lemon**, are unused: no list places their pickups, no chest gives them, no door asks for them and no code hands them
+out. Menu text exists for all of them ("... Key Required" and the key names).
+
+Placed by a pack, their pickups and doors work. A door needs a key when its entry +0x12 is the key's item + 2 (light
+blue 6, lime 7, purple 8, tango 9, lemon 10). Seen in the port: the lime key and a lime key door with its lock
+lights.
+
+<Shots>
+<Shot src="/unused/objects/0064_lightbluekey.webp" title="0x25C light blue key (model 100)">Never placed, given or asked for.</Shot>
+<Shot src="/unused/objects/0065_limekey.webp" title="0x25D lime key (model 101)">Never placed, given or asked for.</Shot>
+<Shot src="/unused/objects/0066_purplekey.webp" title="0x25E purple key (model 102)">Never placed, given or asked for.</Shot>
+<Shot src="/unused/objects/0067_tangokey.webp" title="0x25F tango key (model 103)">Never placed, given or asked for.</Shot>
+<Shot src="/unused/objects/0068_lemonkey.webp" title="0x260 lemon key (model 104)">Never placed, given or asked for.</Shot>
+</Shots>
+
+## Other pickups never placed
+
+<Shots>
+<Shot src="/unused/objects/00BE_ammoclip.webp" title="0x17E ammo clip (model 190)">Works as a plain list entry. A full set of "... Clip" strings exists (87-101).</Shot>
+<Shot src="/unused/objects/027A_shipBluePrint.webp" title="0x2ED ship blueprints (model 634)">Works when placed: it sets game flag 65.</Shot>
+<Shot src="/unused/objects/0099_MinersBook.webp" title="0x186 magazine (model 153)">Don't place it: it has no row in the collectable table, so it runs on garbage.</Shot>
+</Shots>
+
+Two more have no model of their own:
+- **Invincibility (0x33C)** works in single player: invulnerability plus the shield.
+- **Invisibility (0x12A)** only half works there: the hero is still drawn, but enemies stop hearing and noticing him.
+
+Both are named only by the multiplayer pickup setup. There is also a pyramid-shaped pickup model with no object: see
+[Models](/unused/models).

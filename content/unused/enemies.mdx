@@ -1,0 +1,75 @@
+---
+title: Unused enemies
+description: Enemies with a full definition but no placement, enemies placed only in the developers' test rooms, and the cut water boss, with what each one does.
+---
+
+# Enemies
+
+All of these are squad enemies: a squadron entry names their type, and the squad code (overlay 3) runs them. What
+each does comes from the decomp; "seen" means tried in the port's test hub.
+
+How the shared parts work:
+- **Attack.** A type with an attack animation fires whatever that animation's fire set says. A type with **no**
+  attack animation turns to face the hero and fires one laser bolt instead. Several cut types have their own bolt
+  sound, so they were meant to shoot at some point.
+- **Death** depends on the type: removed at once; **flung** (thrown up spinning, then a blast where it lands); a
+  **death animation, then a fade** (a type with no dying animation keeps its body); or **electrocuted**, then an
+  explosion.
+- **Flyers fly at the squadron's height.** A flying squadron placed on the floor hovers at the floor. The developers'
+  test rooms put flyers 84 units above it.
+
+## With a full definition but no placement
+
+<Shots>
+<Shot src="/unused/objects/01F0_SandWorm.webp" title="0x166 worm (model 496)">Flies with a snap turn; no attack animation, so it fires laser bolts. Flung when it dies. Seen: hovers and shoots once raised 84 units.</Shot>
+<Shot src="/unused/objects/0047_antbuggy.webp" title="0x68 ant buggy (model 71)">No attack routine, no animations and no joints, only an engine sound: a prop in all but name. Seen: stands still.</Shot>
+<Shot src="/unused/objects/01DA_GreenAlien.webp" title="0x1E5 alien (model 474)">A walker on the tribal animation set; fires laser bolts with its own sound. 6 body parts, the head can come off. Seen: walks, shoots and dies.</Shot>
+<Shot src="/unused/objects/0383_MrPants.webp" title="0xEA cheat character (model 899)">The object has no enemy row, so no squadron can use it. Its model is in the game: a cheat draws the blue ants with it. Seen: a pack type that copies the blue ant's definition fights as a blue ant.</Shot>
+<Shot src="/unused/sprites/sprite036.webp" title="0xE6 water boss (sprite 36)" pixel>The water boss: its definition is this one sprite, drawn 40 times as its tentacles. See below.</Shot>
+</Shots>
+
+## The water boss
+
+A creature of glowing orbs whose tentacles sway, then reach for the hero when he comes close. Object 0xE6 is an
+ordinary squad enemy drawn with sprite 36, and overlay 152 holds only its code. Nothing names it: no level,
+squadron, text or cutscene, so which water level it was for is unknown.
+
+- **Body:** always 5 tentacles of 8 orbs, depth-sorted. The 40 orbs are also its 40 hit spheres. The orbs pulse in
+  size along each tentacle.
+- **Scale:** the squadron's member scale byte, divided by 142 rather than the usual 100, sizes the tentacles, their
+  reach, the trigger range and the orbs.
+- **Waving:** each tentacle sways in slow circles, with a new heading eased in every so often and a ripple running
+  down the chain.
+- **Reaching:** when the hero comes within 1500 × scale, the tentacles blend into a reach towards him, at most
+  720 × scale long. Past 2000 × scale they blend back into waving.
+- **Hits:** a shot tentacle flashes red for one frame.
+- **Immune to some things:** it can't be electrocuted and the aim won't lock on to it.
+- **One per level:** its state is one shared block, not per object. Every member of its squadron redraws all 40 orbs,
+  so a squadron of more than one stacks them (and slows the game).
+- **No attack of its own:** reaching only moves the orbs.
+
+**It can't die in the shipped code.** It has normal health, but every hit is scaled by the struck sphere's damage
+percent, and its 40 orb spheres get 0. Every weapon deals nothing: shots spark on it and it never dies. It may have
+been scenery to get past, or unfinished. Seen in the port: with the orb spheres at 100 percent, it dies after its
+health's worth of hits.
+
+To place one: a squadron of count 1 with enemy type 0xE6, sentry behaviour (9) in all three behaviour bytes, member
+scale 142, about 1500 units of open floor, facing the way the hero comes in, and only one per level.
+
+## Only in the developers' enemy rooms
+
+These enemies are placed only in levels 175-178 and 273, test rooms nothing reaches (see
+[Levels](/unused/levels#test-levels-and-enemy-rooms)).
+
+<Shots>
+<Shot src="/unused/objects/01BC_RedAnt.webp" title="0x83 flying ant (model 444)">A red flying ant with a gun; only in level 176. Its animation set is unfinished, so it spawns downed. Seen: a pack fix to its animation rows makes it fly and attack.</Shot>
+<Shot src="/unused/objects/01CF_TribalChief.webp" title="0x66 tribal chief (model 463)">Only in level 175.</Shot>
+<Shot src="/unused/objects/01D9_TribalHammer.webp" title="0x157 tribal with a hammer (model 473)">Only in level 175.</Shot>
+<Shot src="/unused/objects/01CC_SpannerHand.webp" title="0xF1 heavy brute (model 460)">Only in level 177. A slow walker. Its attack animation has no fire set, so it shoots nothing; its claw is never reached, and its laser beam is on a dying animation, so it fires only while dying. Seen: a pack fix gives its attack the beam.</Shot>
+<Shot src="/unused/objects/01E6_ButterflyBug.webp" title="0x2A flying bug (model 486)">Only in level 178. Its attack routine is empty, so it never fires. Flung when it dies.</Shot>
+<Shot src="/unused/objects/01EF_HornGalaxian.webp" title="0x153 horned flyer (model 495)">Only in level 178. Fires laser bolts; flung when it dies. Seen: hovers at eye height and drains health fast.</Shot>
+<Shot src="/unused/objects/01DF_TermiteStage1.webp" title="0xE0 insect (model 479)">Only in level 273. Every animation is a placeholder. Too many of them answer one action, which overflows the animation picker and crashes on level load. Seen: with the picker capped, it spawns and shoots laser bolts.</Shot>
+<Shot src="/unused/objects/01DE_LavaMonster.webp" title="0xDF lava creature (model 478)">Only in level 273. A walker whose attack animation has no fire set, and no dying animation, so its body stays. Seen: walks up and dies.</Shot>
+<Shot src="/unused/objects/01E4_DragonFly.webp" title="0xF2 dragonfly (model 484)">Only in level 273. Bobs and wanders its area and flies at the hero; its attack animation has no fire set.</Shot>
+<Shot src="/unused/objects/01F2_TurretRocket.webp" title="0xF6 rocket turret (model 498)">Only in level 273. Stands still and fires homing missiles. Electrocuted, then explodes. Seen: kills the hero in about 7 seconds.</Shot>
+</Shots>

@@ -39,7 +39,8 @@ const footer = (
   <Footer>
     <span>
       <a href={RECOMP_REPO}>Jet Force Gemini: Recompiled</a> modding wiki by VibinToast. You need your own copy of the
-      game: nothing from the game is in this wiki or in what the tools make.
+      game: the tools and the packs they make carry nothing from it. The unused content pages show pictures rendered from
+      the game for reference.
     </span>
   </Footer>
 );

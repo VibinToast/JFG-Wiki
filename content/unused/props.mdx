@@ -1,0 +1,49 @@
+---
+title: Unused props and vehicles
+description: Vehicles, lights, test objects and props the game never places, and objects whose code survives with no definition, with what each does when placed.
+---
+
+# Props and vehicles
+
+## Never placed
+
+<Shots>
+<Shot src="/unused/objects/0045_hovboard.webp" title="0x47 hoverboard (model 69)">A ride-on platform: it has the lifts' behaviour, so it only moves along an animation path, with no steering. Its model sits among the lift cars and ant vehicles. Seen: on a looping path it glides back and forth and carries the hero.</Shot>
+<Shot src="/unused/objects/0073_AntTank.webp" title="0x283 ant tank (model 115)">Scenery for a path, like the cutscene ant ships. Its model lists two animations but has no joints, the only one in the game, and drawing it crashes: likely why it was never placed. Seen: a pack copy of the model with no animations is drawn and solid.</Shot>
+<Shot src="/unused/objects/02EC_WindowBeam.webp" title="0x1D0 window light (model 748)">Makes light shafts through a window from the strongest light nearby, and is invisible with none. Its model is the word "PRESENT", from a title-screen window. Seen: lit by a placed light.</Shot>
+<Shot src="/unused/objects/02ED_JLogo.webp" title="0x1DA game logo (model 749)">A static lit model with no code of its own. It ignores its rotation; ride a one-node path to turn it. Seen: drawn.</Shot>
+</Shots>
+
+Also never placed, with no picture here:
+- **Hint characters 0x1E7 and 0x1E9.** They wander and talk like the stock hint characters, and can't be killed.
+  0x1E7 has no hint text of its own (script 8 is a blank placeholder, perhaps its slot).
+- **Vehicles:** an ant transporter (0x5D) and a lift car (0x49). Seen: the lift car rides its path.
+- **Door switches 5, 7, 8, 9 and 10** (0xD4, 0xD6-0xD9). Seen: they work as lock lights beside a key door.
+- **The light show (0x2C2):** rotating coloured lamps with fading ribbon trails. It works as it is.
+- **A spinning light (0x62):** a turning spot light with a lighthouse-style glare. A period of 0 hangs the game.
+- **A bouncy bridge (0xBC):** the stock long wooden bridge with another model. It bounces only when something lands
+  on it falling, not when walked onto.
+- **A path junction (0x7),** with its own code, and **an audio line (0x19F).**
+- **Three doors** (0x46, 0x48, 0x5A) only in two object lists that no level uses.
+
+## Only in levels nothing reaches
+
+<Shots>
+<Shot src="/unused/objects/007B_switch1.webp" title="0xAF world key signs (model 123)">Only in level 68, a sewer room nothing reaches. The first of its 10 models.</Shot>
+<Shot src="/unused/objects/01BB_SpadeOrnament.webp" title="0x162 ornament (model 443)">Only in level 162, the unused sewer boss room.</Shot>
+</Shots>
+
+## Code with no object
+
+These behaviours have code but no object definition uses them. Each needs a new definition with that behaviour (a
+pack object type) and a placement.
+
+- **Frog (behaviour 21):** sits, then hops 40-72 units, hops away from a hero who comes close, keeps within a range
+  of its start, and is squashed flat or vanishes when touched. Its code expects a 64-byte data block the game never
+  gives it, which crashes. Seen in the port with that fixed: frogs load. No frog model survives.
+- **Buoy (16):** a bobbing solid prop. No buoy model survives.
+- **Timed target (119):** a multiplayer target that can't be damaged and leaves after a time, a sibling of the stock
+  pop-up target. Seen: it shows, then leaves on time.
+- **Sky switch (10):** changes the sky when a hero comes within its radius.
+- **No-gravity box (31).**
+- **Flare switch (13)** only sets its scale, and **wave swell (14)** does nothing.

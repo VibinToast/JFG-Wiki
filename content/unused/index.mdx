@@ -1,0 +1,67 @@
+---
+title: Unused content
+description: What Jet Force Gemini ships but never uses (cut levels, enemies, pickups, props, models, animations, sprites, textures, text, code and music), with pictures rendered from the US ROM.
+---
+
+# Unused content
+
+What the US version of the game ships but never uses: a room the space station never reaches, levels with no way in,
+enemies with no placement, a cut weapon, props, models, animations, art, text, code and music. Most of it can be
+brought back with a pack, and the port's test packs [already do that](#brought-back-in-the-port) for much of it.
+
+Each part has its own page, so a page only loads its own pictures. The pictures are rendered from the US ROM. Models
+are shown in their bind pose (orthographic, three-quarter view). Tracks are drawn unlit in their baked vertex colours,
+with back faces hidden so the insides show. Click a picture for the full size, or an animation to play it.
+
+<Cards>
+  <Cards.Card title="The space station dead end" href="/unused/space-station" arrow />
+  <Cards.Card title="Levels nothing reaches" href="/unused/levels" arrow />
+  <Cards.Card title="Enemies" href="/unused/enemies" arrow />
+  <Cards.Card title="Pickups and weapon 15" href="/unused/pickups" arrow />
+  <Cards.Card title="Props and vehicles" href="/unused/props" arrow />
+  <Cards.Card title="Models with no object" href="/unused/models" arrow />
+  <Cards.Card title="Animations 510-575" href="/unused/animations-menus-1" arrow />
+  <Cards.Card title="Animations 828-877" href="/unused/animations-menus-2" arrow />
+  <Cards.Card title="Other animations" href="/unused/animations-other" arrow />
+  <Cards.Card title="Sprites" href="/unused/sprites" arrow />
+  <Cards.Card title="2D textures" href="/unused/textures" arrow />
+  <Cards.Card title="Text" href="/unused/text" arrow />
+  <Cards.Card title="Code with no way in" href="/unused/code" arrow />
+  <Cards.Card title="Debug code and cheats" href="/unused/debug" arrow />
+  <Cards.Card title="Music" href="/unused/music" arrow />
+</Cards>
+
+## How sure each part is
+
+Each item was found by a scan of the game's data and a search of the decomp's code that found **no use**. An id the
+game only reaches through a computed value, or through a table the scans didn't decode, can still look unused. Treat
+each item as a strong candidate, not proof. Items checked by hand, or tried in the port, say so.
+
+What counted as a use:
+- **Levels:** exits in every object list, cutscene level changes, planet map rows, new-game levels, hint menu items,
+  and level ids written in the code (level changes, restart redirects, boss deaths, the multiplayer tables).
+- **Objects:** list entries, squadron enemy types, cutscene path objects, skies, front-end items, chest contents, the
+  hero tables, weapon pickups, and object ids written in the code.
+- **Code:** every function named anywhere in the decomp's code or data tables, plus the relocation tables.
+- **Music:** level headers, tune ids in the code, the collectable table and cutscene commands.
+
+## Turned out to be used
+
+Some things the first survey listed were found in use later. They are left out of the galleries.
+
+- **The green and blue keys.** The stock game never places their key pickups, but chests hand them out. A chest
+  with contents 6 gives the green key (level 170) and contents 18 the blue key (levels 142 and 312). The chest shows
+  a floating key display object (0x270, 0x2F0) rising out of it. Seven stock doors need the green key and four need
+  the blue one. Only light blue, lime, purple, tango and lemon are really unused: see [Pickups](/unused/pickups).
+- **The cheat character's model.** The enemy object 0xEA is unused, but its model is in the game: a cheat in the
+  options swaps the blue ant's model and its low-detail model for models 0x383 and 0x384.
+- **The light show (0x2C2)** is unplaced, but its code runs as it is: placed in a level, its four lamps light and
+  move. An early reading said it crashed; that came from a table read one word off.
+- **The two "cut" heroes.** A Tribal and a yellow ant are multiplayer skins 2 and 3, unlocked by totem poles in
+  two levels.
+
+## Brought back in the port
+
+The port's test packs (an enemy test hub and a library mod of restored content) place most of what is on these
+pages in a hub of test rooms. A few needed port fixes (the frog's data block, the water boss's damage, weapon 15 as a proximity mine), and
+the plan is to move those into mods. Each page says what was seen working.

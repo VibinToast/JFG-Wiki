@@ -96,3 +96,20 @@ footer a { text-decoration: underline; text-underline-offset: 2px; }
 .jfg-panel .btn.wide { background: #4772b3; color: #fff; }
 .jfg-panel .field { display: flex; justify-content: space-between; background: #2b2b2b; border-radius: 4px; padding: 3px 7px; }
 .jfg-panel .warn { color: #ff8a80; }
+
+/* The unused-content gallery (components/gallery.tsx, clip.tsx): renders on the game's grey, in a grid of cards. */
+.jfg-shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 1.25rem 0 2rem; }
+.jfg-shot { margin: 0; border: 1px solid var(--jfg-line); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+.jfg-shot-wide { grid-column: 1 / -1; }
+.jfg-shot img, .jfg-shot video { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; background: #808080; }
+.jfg-shot-wide img { aspect-ratio: auto; max-height: 340px; }
+.jfg-shot-pixel img { image-rendering: pixelated; }
+.jfg-shot figcaption { font-size: 0.82rem; padding: 0.5rem 0.65rem 0.6rem; line-height: 1.4; }
+.jfg-shot figcaption b { display: block; font-family: var(--font-mono), Consolas, monospace; font-weight: 500; font-size: 0.78rem; }
+.jfg-shot figcaption span { opacity: 0.8; }
+.jfg-clip-still { position: relative; display: block; width: 100%; padding: 0; border: 0; cursor: pointer; }
+.jfg-clip-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; background: rgba(11, 17, 32, 0.7);
+}
+.jfg-clip-still:hover .jfg-clip-play { background: hsl(var(--nextra-primary-hue) var(--nextra-primary-saturation) 40%); }

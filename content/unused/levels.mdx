@@ -1,0 +1,86 @@
+---
+title: Levels nothing reaches
+description: The 36 of the game's 412 levels that no exit, cutscene, map or code leads to, with renders of the ones that have their own tracks.
+---
+
+# Levels nothing reaches
+
+The game has 412 levels. 376 are reached by an exit, a cutscene, the planet map or the code; 36 are not.
+
+## Cut parts of the real game
+
+These are the best ones to restore.
+
+| Level | Track | What it is |
+|---|---|---|
+| 23 | 18 (its own, 657 triangles) | A cave in the alien world. Exit to 203, start point 5. Only the unused level 105 leads here. |
+| 148 | 125 (its own, 1598 triangles) | Pipes in the alien world. A Lupus, exit to 205, start point 3. |
+| 162 | 139 (4 segments, 816 triangles) | A sewer boss room: an ornament, a light beam, 2 crates, a squadron, an exit to 34. |
+| 68 | 3 | A sewer room: 6 exits, doors, 3 door switches. |
+| 71 | 61 (its own, 2445 triangles) | A sewer room with 6 exits, one to level 53 (start point 1) in the desert world: an old sewer-to-desert link. |
+| 73 | | A sewer map, a menu-type level. |
+| 96 | 80 | A playable twin of cutscene 97 (start point, camera, sound). |
+| 141 | 191 | A boss level of the final world, with 2 start points. |
+| 180 | 152 | A hall in the final world, with 1 start point. |
+| 340 | 272 | A ship room: a bear, exit to 304 start point 6. |
+| 346 | | A ship cutscene going to 405; replaced by 391. |
+| 231, 235, 369, 45 | 45 uses track 38 | Cutscenes: 231 was replaced by 255. |
+| 79, 1 | | Menus: an old character select, and a second front end (1 may be loaded by front-end code). |
+
+<Shots>
+<Shot src="/unused/levels/level023_track018_top.webp" title="Level 23, track 18, from above">Its own track; exit to 203. Only the unused 105 leads here.</Shot>
+<Shot src="/unused/levels/level023_track018_three_quarter.webp" title="Level 23, track 18, three-quarter view">The same cave from the side.</Shot>
+<Shot src="/unused/levels/level148_track125_top.webp" title="Level 148, track 125, from above">Its own track, a Lupus and an exit to 205.</Shot>
+<Shot src="/unused/levels/level148_track125_three_quarter.webp" title="Level 148, track 125, three-quarter view">The same pipes from the side.</Shot>
+<Shot src="/unused/levels/level162_track139_top.webp" title="Level 162, track 139, from above">4 segments: a boss room with an ornament, crates and a squadron.</Shot>
+<Shot src="/unused/levels/level162_track139_three_quarter.webp" title="Level 162, track 139, three-quarter view">The same boss room from the side.</Shot>
+<Shot src="/unused/levels/level071_track061_top.webp" title="Level 71, track 61, from above">Its own track; 6 exits, one to the desert world's level 53.</Shot>
+<Shot src="/unused/levels/level071_track061_three_quarter.webp" title="Level 71, track 61, three-quarter view">The same room from the side.</Shot>
+</Shots>
+
+## Named "NOT USED"
+
+Three levels say so in their own names:
+- **83:** both its object lists are empty.
+- **105:** 29 squadrons, exits to 23 and 142.
+- **116:** a jetpack test with 8 refuel points.
+
+Tracks 85 and 94 are one-triangle stubs: their geometry was removed.
+
+## Test levels and enemy rooms
+
+- **33:** a character test: tokens, character transformers, an alien door and a hint character.
+- **90:** a top-down test with a squadron only. Probably the home of the [flying ship](/unused/code#a-flying-ship-with-a-top-down-camera).
+- **108:** 3 Lupus characters.
+- **109:** a sewer test level, the only user of track 88 (44 segments).
+- **111, 137, 117:** multiplayer prototypes.
+- **140:** a world map test.
+- **160:** a cooperative maze: 70 squadrons, 151 patrol paths, 15 flame objects.
+- **197:** a multiplayer canyon.
+- **175-178 and 273,** in world 19: the developers' enemy rooms. Levels 176-178 are on track 90 (floor at y -178),
+  and each list holds one squadron of nearly every enemy type, count 1. They are the original settings for each
+  type: flyers are placed 84 units above the floor and walkers on it. See [Enemies](/unused/enemies).
+
+In the Japanese version, 33, 90 and 140 are renamed as tests of chests and hint text, collectables, and door
+messages, and their lists are filled with those test objects.
+
+<Shots>
+<Shot src="/unused/levels/level109_track088_top.webp" title="Level 109, track 88, from above">A sewer test level, track 88's only user (44 segments).</Shot>
+<Shot src="/unused/levels/level109_track088_three_quarter.webp" title="Level 109, track 88, three-quarter view">The same test level from the side.</Shot>
+<Shot src="/unused/levels/level045_track038_top.webp" title="Level 45, track 38, from above">A ship cutscene level nothing plays.</Shot>
+<Shot src="/unused/levels/level045_track038_three_quarter.webp" title="Level 45, track 38, three-quarter view">The same cutscene level from the side.</Shot>
+</Shots>
+
+## Odd links in levels that are reached
+
+- 56 exits to 112 start point 1, but 112 has only start point 0.
+- 61 exits to 65 start point 1: it crosses worlds, and that start point doesn't exist.
+- Start points nothing leads to: 8 sp4, 56 sp1, 61 sp1, 168 sp1, 217 sp1, 245 sp1, 316 sp1, 375 sp1 and sp2.
+
+## Other leftovers
+
+- **Tracks used only by levels nothing reaches:** 18, 38, 61, 63, 85, 88, 90, 94, 95, 125, 137, 139, 168, 216.
+- **Assets 0x20 and 0x21** are not old level headers. They are a 412-entry names table: each level's name plus three
+  strings of editor field text (for example "dome5 / ROTATETIME / 300"). Five entries keep a full name that the level
+  header cuts at 31 characters. The Japanese version regenerated it.
+- **Cutscene blocks no level uses:** 52, 70, 124 and 327.

@@ -1,0 +1,41 @@
+---
+title: The space station dead end
+description: The last fight of the space station world opens a door onto a corridor that ends in a wall, the joint for a room that was never built.
+---
+
+# The space station ends at a dead end
+
+The space station (world 12) has four playable rooms in a line, all on one tune, built from a developer's sewer demo
+rooms:
+
+```
+map -> 275 landing (cutscene) -> 276 <-> 104 <-> 264 <-> 9
+```
+
+Level 276 also exits to the take-off cutscene (331), then 271 and the ending sequence (93).
+
+- **Level 9's only exit leads back to 264** (checked by hand: level 9 uses track 8 and lists 9 and 412).
+- Level 9 has one locked door at (653, 7, 328), door id 1. It opens when its squadron (0x1E, five blue ants) is
+  dead. The other twelve doors of the same kind in 104 and 264 are unlocked.
+- Behind it, segment 15 of track 8 is a corridor (x 418 to 822, z 283 to 384) that ends in a closed wall. There is
+  no exit, start point or level end there.
+
+So the last fight opens a door onto a stub: the joint for a room that was never built. The Japanese version also
+removes three squadrons and three blue ants from level 104.
+
+<Shots>
+<Shot src="/unused/levels/level009_track008_top.webp" title="Level 9, track 8, from above">Segment 15 (orange) is the corridor behind the locked door (marked): it ends in a closed wall.</Shot>
+<Shot src="/unused/levels/level009_track008_three_quarter.webp" title="Level 9, track 8, three-quarter view">The same room from the side.</Shot>
+<Shot src="/unused/levels/level009_track008_focus.webp" title="Level 9, segment 15 close up">The corridor and the wall it ends in.</Shot>
+</Shots>
+
+## To restore it
+
+1. Geometry joined to the end of segment 15: a new track (id 301 is free) or an edit of track 8.
+2. A level for it. Reuse an unused level id such as 83 (both its object lists are empty), in world 12, region 26,
+   region index 4, on the space station's tune (55).
+3. An exit behind the door in level 9 into the new level, and a new start point in 9 for the way back.
+4. An ending, for example an exit to 331, the take-off cutscene.
+
+JFG-Studio can make the new level and its exits: see [Make a planet](/tutorials/planet) and
+[Edit a stock level](/tutorials/stock-level).

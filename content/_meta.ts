@@ -8,4 +8,5 @@ export default {
   tutorials: 'Tutorials',
   api: 'API reference',
   'c-api': 'C API reference',
+  unused: 'Unused content',
 };

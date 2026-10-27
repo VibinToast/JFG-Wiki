@@ -1,0 +1,36 @@
+---
+title: Debug code and cheats
+description: The title-screen button code that turns on the debug display, and cheat flags the game reads but never sets.
+---
+
+# Debug code and cheats
+
+## The debug code
+
+Checked by hand. On the title screen, every frame, the game compares button presses with a stored sequence
+(`debugInputCode`, 0x800A339C):
+
+> C-Left, C-Right, C-Up, C-Down, R, L, L, R, **C-Up**, R, C-Down, R, L, C-Right
+
+The data has C-Up as the 9th press; a comment in the decomp's source says C-Left, which is wrong. When the code is
+entered:
+- the debug menu flag toggles on;
+- the screen shows the level name, the player's X / Y / Z and the free memory of three pools;
+- after a crash, the game shows an interactive memory and module viewer instead of hanging (this also needs the
+  console's 6105 boot chip).
+
+## Cheat flags nothing sets
+
+The game reads these, but nothing sets them. Checked by hand: the names are at these addresses.
+
+| Flag | RAM | Effect |
+|---|---|---|
+| `allLevelCheat` | 0x800A5068 | every map point can be chosen |
+| `invulnerabilityCheat` | 0x800A5070 | read by the hero's control and three bosses' |
+| `DebugAmmoFlag` | 0x800A5074 | never out of ammo |
+| `allweaponsCheat` | 0x800A5078 | all weapons |
+| `D_800A507C` | 0x800A507C | read next to game flag 3; unknown |
+
+- Each is read as one byte. Set it in the ROM's data, or write the RAM.
+- The menu that set them was probably the kiosk build's debug menu. Its code isn't in the US version.
+- `bugHeadCheats` (0x800FF392, 6 bytes) is never used.
