@@ -7,4 +7,5 @@ export default {
   blender: 'Blender add-on',
   tutorials: 'Tutorials',
   api: 'API reference',
+  'c-api': 'C API reference',
 };

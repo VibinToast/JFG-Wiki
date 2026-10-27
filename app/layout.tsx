@@ -37,15 +37,10 @@ const navbar = (
 
 const footer = (
   <Footer>
-    <div className="jfg-footer">
-      <nav className="jfg-footer-links">
-        <a href="/api/reference">C API reference</a>
-      </nav>
-      <span>
-        <a href={RECOMP_REPO}>Jet Force Gemini: Recompiled</a> modding wiki by VibinToast. You need your own copy of
-        the game: nothing from the game is in this wiki or in what the tools make.
-      </span>
-    </div>
+    <span>
+      <a href={RECOMP_REPO}>Jet Force Gemini: Recompiled</a> modding wiki by VibinToast. You need your own copy of the
+      game: nothing from the game is in this wiki or in what the tools make.
+    </span>
   </Footer>
 );
 
