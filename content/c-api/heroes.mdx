@@ -81,6 +81,20 @@ while it is dead (health under 256), the game's own death and restart. **Things 
 flash and shake (`jfg_screen_flash`), lava damage, and the gun's position; do those yourself, or hand the hero back.
 </Callout>
 
+<Callout type="info">
+**Learned the hard way:**
+- **The hero's state** (its data +0x568) is the game's, from the last tick its code ran the hero: falling, aiming.
+  The game checks it (a chest opens only for a standing hero), so set it back to 0 while your hero stands.
+- **Chests** open on A while the hero stands in front of one and faces into it. The chest then marks the hero (data
+  +0x1FA) and plays its open move, which only the game's code runs: hand the hero back with `jfg_hero_game_control`
+  while the mark is set.
+- **On uneven ground** the game rests its hero a little below the floor you see (its collision spheres sit into a
+  slope). While the game's code runs it, draw your hero on your own floor, not at the hero's height.
+- **The title screen is no level change.** After a game over or quitting to the title, the hero object is gone and
+  its memory reused, without `jfg_on_level_change`. Keep a hero only while `jfg_get_level()` is still the level you
+  took it in.
+</Callout>
+
 ## Taking a hero over
 
 ### jfg_hero_takeover <Status s="built" />
@@ -121,6 +135,9 @@ RECOMP_CALLBACK("*", jfg_on_hero_control) void my_hero(void* hero, int frames, i
  * @since  4
  * @note   jfg_on_hero_control still fires first each tick, so a mod can switch tick by tick (while the player holds
  *         aim, for instance). When the mod takes the hero back mid-aim, the hero leaves its aim.
+ * @note   On hand-over the game's code starts from where the mod put the hero: its collision is moved along with it
+ *         (no pop up, no snap back to where the game last had it), and leftover speeds, air time, hover and a jump or
+ *         aim state are cleared. The port's Jump While Aiming option is off for a taken-over hero.
  */
 void jfg_hero_game_control(int character, int on);
 ```
@@ -260,7 +277,8 @@ typedef struct {
  * @since  4
  * @note   Set it every tick you want it; the tick you stop, the game's camera carries on from there. While it is set,
  *         the port's camera options (dual-stick and aiming views, FOV) leave the camera alone, the left stick is
- *         given as the pad gives it, and the right stick works as the C buttons.
+ *         given as the pad gives it, and the right stick works as the C buttons. It lapses a couple of ticks after
+ *         the last set, also where no hero runs (the title screen), so the field of view doesn't linger.
  */
 void jfg_camera_set(const JfgCameraSet* camera);
 ```
