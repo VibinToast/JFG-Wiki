@@ -1,20 +1,22 @@
 ---
 title: 'C API: Weapons'
-description: New weapons of your own (any number, thrown or not), owning weapons and ammo, firing your own shots, pack objects and explosions for weapons, HUD icons, kill credit and weapon stats in the Jet Force Gemini Recompiled C mod API.
+description: New weapons of your own (any number, thrown or not), owning weapons and ammo, firing your own shots, charged weapons, a gun of your own in the hero's hand, pack objects and explosions for weapons, HUD icons, kill credit and weapon stats in the Jet Force Gemini Recompiled C mod API.
 ---
 
 # Weapons
 
 The heroes' weapons from code: **new weapons of your own**, who has what and how much ammo, your own shots and
 effects, HUD icons and kill credit. How the game's weapon table works and what each field does is in
-[Weapons](/api/weapons). A full walk-through of a new thrown weapon is the tutorial
-[A thrown weapon](/tutorials/thrown-weapon).
+[Weapons](/api/weapons). Full walk-throughs: [A thrown weapon](/tutorials/thrown-weapon), and
+[A charged weapon](/tutorials/charged-weapon) for one that charges, fires its own blast and has its own gun in the
+hand.
 
 | Entry | Brief | Status |
 |---|---|---|
 | `jfg_weapon_register` | A new weapon, by name | <Status s="built" /> |
 | `jfg_weapon_find`, `jfg_weapon_count`, `jfg_weapon_info` | Every weapon, stock and modded | <Status s="built" /> |
 | `jfg_weapon_set_icon`, `jfg_weapon_set_icon_image` | A new weapon's HUD icons | <Status s="built" /> |
+| `jfg_weapon_set_held_model` | A new weapon's model in the hero's hand | <Status s="built" /> |
 | `jfg_hero_weapon`, `jfg_hero_select_weapon` | The weapon in hand; switching | <Status s="built" /> |
 | `jfg_hero_has_weapon`, `jfg_hero_give_weapon`, `jfg_hero_take_weapon` | Owning weapons | <Status s="built" /> |
 | `jfg_hero_ammo`, `jfg_hero_set_ammo` | Ammo | <Status s="built" /> |
@@ -26,7 +28,6 @@ effects, HUD icons and kill credit. How the game's weapon table works and what e
 | `jfg_enemy_traits` | How heavy and how high an enemy is | <Status s="built" /> |
 | `jfg_world_to_screen` | Where a point shows on screen | <Status s="built" /> |
 | `jfg_weapon_stat_get`, `jfg_weapon_stat_set` | A slot's damage, rate, speed... | <Status s="partial" /> |
-| A new weapon's model in the hero's hand | | <Status s="planned" /> |
 | `jfg_on_weapon_select`, `jfg_on_projectile_spawned`, `jfg_on_projectile_hit` | More weapon events | <Status s="planned" /> |
 
 ## How new weapons work
@@ -41,6 +42,12 @@ game's own code shows, aims, fires and throws it.
 - **Switching.** Next / previous weapon steps through every weapon the hero owns, the new ones included.
 - **Firing.** A new weapon fires as its **host**, a stock weapon (its shot, aim and timing), unless your
   `jfg_on_weapon_fire` cancels the shot and makes your own.
+- **Charging.** A weapon whose stats row charges (the plasma shotgun's, `row_from` 3: hold fire, let go) charges at
+  the plasma shotgun's rate, and `jfg_on_weapon_hud` reports its charge, so mods' HUDs fill its charge bar.
+  `jfg_on_weapon_fire`'s `charge` is the charge it was let go at. The game's own charge glow, the charge pips in the
+  aim and the rumble stay the plasma shotgun's: show your own (a sound, an object at the muzzle).
+- **In the hand.** A new weapon shows its own model with `jfg_weapon_set_held_model`; without one the hero holds
+  what the grenades show (an empty hand for Vela and Juno, a grenade for Lupus).
 - **Saving.** Owned new weapons and their ammo are saved with the save file, by name. A weapon whose mod is removed
   stays in the file and comes back when the mod does.
 - **Randomizers.** All weapons, stock and new, are in one list (`jfg_weapon_count`, `jfg_weapon_info`); any weapon
@@ -114,6 +121,36 @@ int jfg_weapon_info(int id, JfgWeaponInfo* out);
 void jfg_weapon_set_icon(int id, int sprite);
 void jfg_weapon_set_icon_image(int id, int w, int h, const unsigned int* rgba);
 ```
+
+### jfg_weapon_set_held_model <Status s="built" />
+
+```c
+/**
+ * @brief  A new weapon's model in the hero's hand while it is held: a model of your pack, drawn on the hand where the
+ *         game draws its own guns, at their size and axes. Its barrel point is where the weapon's shots leave.
+ * @param  model  Its number this run: jfg_asset_number("mod_id:model_gun"); -1 = none of its own (the hero then
+ *                holds what the grenades show: an empty hand for Vela and Juno, a grenade for Lupus).
+ * @since  6
+ * @note   Call it once, after jfg_weapon_register. Only for new weapons (16 up).
+ */
+void jfg_weapon_set_held_model(int id, int model);
+```
+
+What the model must be:
+- **Static**: one mesh, no joints or animation. Nothing poses a held gun.
+- **In the hand's frame**: the **grip at the origin** (that point sits in the hero's hand), the barrel running
+  forward, down and out toward about **(0.75, -0.36, -0.55)** in game axes (Y up), as the game's own hand guns.
+  The game draws it with the hand's own turn, so this odd angle is what comes out straight in the hand.
+- **About 70 units** from the grip to the muzzle, in the hero's own units: Vela's guns are 66-78 long; Juno's are
+  about 1.2 times bigger, and one model is used for both. The object's scale isn't used.
+- **A barrel point**: an empty named **`barrel`** at the muzzle in the `.glb` (jfgformats 0.7.1 or newer). Shots,
+  and the barrel position the game keeps for the hero, leave from there. Without one the barrel stays where the
+  last gun left it.
+- **Lupus** carries his guns on his back, pointing forward along his body. A model made for Vela's hand looks off on
+  him: check it, or make the weapon one he doesn't use.
+- White vertex colours (the game lights it by them) and your light painted into the textures.
+
+The [A charged weapon](/tutorials/charged-weapon#put-a-gun-in-the-hand) tutorial builds one in Blender.
 
 ## Owning weapons and ammo
 
@@ -315,8 +352,8 @@ void jfg_weapon_stat_set(int weapon, int field, int value);
 
 ## Planned
 
-- **A new weapon's model in the hand.** While a new weapon is in hand, the hero holds what slot 8 (grenades) shows:
-  an empty hand for Vela and Juno, a grenade for Lupus. A gun of your own in the hand is planned.
+- **A model per hero.** One held model serves all three heroes; Lupus's back mount would want its own.
+- **The game's charge glow, aim pips and rumble for new charged weapons.** Today they stay the plasma shotgun's.
 - **`jfg_on_weapon_select`, `jfg_on_projectile_spawned`, `jfg_on_projectile_hit`.** Until then, poll
   `jfg_hero_weapon` and track your own shots.
 - **The hero's aim as a helper.** The tutorial reads it from the hero's control data.
@@ -324,7 +361,7 @@ void jfg_weapon_stat_set(int weapon, int field, int value);
 ## Example: a weapon that isn't thrown
 
 A rapid green laser on the machine gun's timing, firing Floyd's bolt instead of the game's shot, with its kills
-credited to it:
+credited to it (a bigger one, charged, with a blast of its own, is [A charged weapon](/tutorials/charged-weapon)):
 
 ```c
 static int laser = -1;

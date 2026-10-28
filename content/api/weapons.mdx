@@ -100,8 +100,10 @@ game uses it, for every hero, and you need the entry numbers from the decomp's t
 A code mod can add weapons of its own, any number of them, thrown or not (mod API 6). The game has no free slot, so
 whichever new weapon is in the hero's hand borrows slot 15, and it acts like a stock **host** weapon unless the mod
 fires its own shot. New weapons switch like the game's own, are saved with the save file by name, and can have their
-own HUD icons, 3D objects, ammo pickups and kill credit.
+own HUD icons, gun model in the hero's hand, 3D objects, ammo pickups and kill credit. A new weapon on the plasma
+shotgun's row charges like it.
 
 - Reference: [C API: Weapons](/c-api/weapons).
-- Walk-through: [A thrown weapon](/tutorials/thrown-weapon), with notes for weapons that aren't thrown.
-- Still planned: a new weapon's own model in the hero's hand, and projectile events.
+- Walk-throughs: [A thrown weapon](/tutorials/thrown-weapon), and [A charged weapon](/tutorials/charged-weapon) (its
+  own blast and its own gun in the hand).
+- Still planned: projectile events.

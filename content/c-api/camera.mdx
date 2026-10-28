@@ -16,7 +16,7 @@ Where the camera is, and taking it over for intros, boss reveals and scripted sc
 | `jfg_camera_follow` | Follow an object from an offset | <Status s="planned" /> |
 | `jfg_camera_path` | Fly along points | <Status s="planned" /> |
 | `jfg_camera_release` | Hand the camera back to the player | <Status s="planned" /> |
-| `jfg_camera_shake` | Shake | <Status s="planned" /> |
+| [`jfg_camera_shake`](#jfg_camera_shake-) | Shake the view | <Status s="built" /> |
 | `jfg_camera_set_fov` | Field of view | <Status s="planned" /> |
 | `jfg_camera_letterbox` | Cinema bars | <Status s="planned" /> |
 | `jfg_on_camera_update` | Change the camera each frame | <Status s="planned" /> |
@@ -84,17 +84,27 @@ int jfg_camera_busy(void);
 void jfg_camera_release(int frames);
 ```
 
-### jfg_camera_shake <Status s="planned" />
+### jfg_camera_shake <Status s="built" />
 
 ```c
 /**
- * @brief  Shakes the camera: hits, quakes, explosions.
- * @param  strength  World units of movement.
- * @param  frames    How long; it fades out.
- * @target 9
- * @note   Follows the player's screen-shake setting.
+ * @brief  Shakes the first player's view: hits, blasts, quakes. The view jolts up and down by up to magnitude level
+ *         units, fading out over ms milliseconds.
+ * @param  magnitude  0-100. The game's strong hits use 15-25 over 2-4 seconds; 5-8 is a light thump.
+ * @param  ms         How long it lasts, fading out (at most 10 seconds).
+ * @since  6
+ * @note   A new call replaces the running shake, 0 stops it, and a level change ends it. It shakes whichever camera is
+ *         on: the game's, the dual-stick and aiming views, and a mod's own (jfg_camera_set).
  */
-void jfg_camera_shake(float strength, int frames);
+void jfg_camera_shake(int magnitude, int ms);
+```
+
+The shake is up and down only, as the game's own. It keeps running while the game is paused, so a shake started
+just before a pause is usually over when play resumes. The [Concussion Cannon](/tutorials/charged-weapon#shake-and-recoil)
+shakes by how far it was charged:
+
+```c
+jfg_camera_shake((int)(3 + 9 * strength), (int)(300 + 700 * strength));   // strength 0.2 .. 1
 ```
 
 ### jfg_camera_set_fov <Status s="planned" />

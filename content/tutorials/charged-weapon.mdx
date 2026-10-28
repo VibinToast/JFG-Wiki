@@ -1,0 +1,251 @@
+---
+title: 'Tutorial: a charged weapon'
+description: Make a new charged weapon for Jet Force Gemini Recompiled - hold to charge, let go to fire a cone of force that flings enemies into walls, with its own gun in the hero's hand, fading effects, screen shake and ammo - with the Concussion Cannon as the example.
+---
+
+# A charged weapon
+
+How the **Concussion Cannon** is made: a new weapon the hero holds in hand. Hold fire to charge it, let go, and a cone
+of force along the aim knocks every enemy in it away: light ones far, heavy ones barely, flyers spinning off through
+the air. An enemy knocked into a wall fast enough slams into it and takes damage. The more you charge, the further and
+harder it hits, the more it pushes you back and the more the view shakes. It has its own gun model in the hero's hand,
+its own effects and sounds.
+
+This builds on [A thrown weapon](/tutorials/thrown-weapon): registering, pack objects, icons and ammo work the same
+way, and are only touched on here. The reference is [C API: Weapons](/c-api/weapons).
+
+<Callout type="info">
+You need the C mod setup from [A first code mod](/tutorials/c-mod), Blender for the models, and the decomp's
+`jfgformats` Python package, **0.7.1 or newer** for the gun's barrel point.
+</Callout>
+
+<Steps>
+### Register a weapon that charges
+
+Use the **plasma shotgun (3)** as host and stats row: its row says "hold to charge, let go to fire", with five charge
+levels. A new weapon with a charging row charges at the plasma shotgun's speed, and mods' HUDs show its charge bar.
+
+```c
+int weapon_id = -1;
+
+RECOMP_CALLBACK("*", jfg_on_game_tick) void tick(int frames) {
+    if (weapon_id < 0) {
+        JfgWeaponDef d = { "mymod:cannon", "Concussion Cannon", "Concussion Charges",
+                           3,      // host: the plasma shotgun
+                           -1,     // charge: as it is
+                           0,      // not thrown
+                           3,      // stats row from the plasma shotgun: it charges
+                           20, 10, 5 };  // max ammo, start ammo, a pickup's ammo
+        weapon_id = jfg_weapon_register(&d);
+        jfg_weapon_set_icon(weapon_id, jfg_asset_number("mymod:sprite_icon"));
+        jfg_weapon_set_held_model(weapon_id, jfg_asset_number("mymod:model_cannon"));  // step 5
+    }
+}
+```
+
+<Callout type="warning">
+The plasma shotgun's own charge glow, the charge marks in its aim and its rumble are tied to the plasma shotgun
+itself, so a new weapon doesn't get them. Give it your own: a sound that rises as it charges, an object at the muzzle.
+</Callout>
+
+### Fire your own blast
+
+Cancel the game's shot when the hero lets go, and read how far it was charged. The charge counts up from 32 in steps
+of 32, so `charge >> 5` is the level, 1 to 5:
+
+```c
+RECOMP_CALLBACK("*", jfg_on_weapon_fire) void fire(JfgWeaponFire* f) {
+    if (f->weapon != weapon_id) return;
+    int level = f->charge >> 5;
+    if (level < 1) level = 1;
+    if (level > 5) level = 5;
+    f->cancel = 1;            // no laser bolt; one charge is used
+    blast(f->hero, level / 5.0f);
+}
+```
+
+While it charges, the hero's control data (`*(unsigned char**)(hero + 0x68)`) holds the charge as a `short` at
+**+0x53E** and bit 0x80 of **+0x540** is set. Watch them each tick to play a charging sound (`jfg_sound_loop`, then
+`jfg_sound_set` to raise its pitch), a cue when it's full, and to grow an orb at the muzzle.
+
+**Where the blast leaves:** the game keeps the gun's barrel in the world at control data **+0x544** (three floats),
+from your held model's barrel point. While the hero aims (control data +0x568 is 5 or 11) the gun isn't drawn and
+that point isn't kept, so place the muzzle yourself just ahead of the view, a little low and to the right.
+
+### Find what's in the cone and fling it
+
+Get the enemies around the muzzle and keep those within the cone's angle of the aim (the aim is worked out as in
+[A thrown weapon](/tutorials/thrown-weapon#throw-your-own-object)), with a clear line to them:
+
+```c
+JfgNear q = { m[0], m[1], m[2], range, hero };
+JfgEnemy found[24];
+int n = jfg_enemies_near(&q, found, 24);
+for (int i = 0; i < n; i++) {
+    // the angle from the aim to (found[i].x, y, z) - m, against the cone's half-width;
+    // then jfg_line_of_sight(hero, found[i].object, m, to), and weigh it with jfg_enemy_traits
+}
+```
+
+Measure the angle flat (only x and z) unless the hero aims well up or down: enemies stand above or below the muzzle.
+
+Writing an enemy's speed alone doesn't work: on its next move its own steering rebuilds the speed and the push is
+gone. Fling it **the game's way** instead, as the game's own knock-back does: give it a speed with some lift, turn on
+its collision with the level, and switch its steering off for a few moves:
+
+```c
+// The enemy's object: speed at +0x1C (x, y, z, units a move; enemies move once every 1/30 s).
+// Its control data at +0x68: a flag word at +0x00 and a move count at +0x17.
+static int fling(void* enemy, float vx, float vy, float vz, int moves) {
+    unsigned char* o = (unsigned char*)enemy;
+    unsigned char* sq = *(unsigned char**)(o + 0x68);
+    const unsigned char* def = *(unsigned char**)(o + 0x40);
+    if (sq == 0 || def == 0 || *(void**)(def + 0x50) == 0) return 0;   // no collision data: move it yourself
+    if ((sq[0] & 0x02) || ((sq[2] & 0x02) && !(sq[3] & 0x10))) return 0; // not moved by the game's physics
+    float* v = (float*)(o + 0x1C);
+    v[0] = vx;
+    v[1] = vy;        // walkers need some lift (4 or more), or they land at once and walk on
+    v[2] = vz;
+    sq[1] |= 0x04;    // collide with the level: bounce, fall, slide, report what it touched
+    sq[0x17] = moves; // steering off for this many moves (12 for walkers, 14 for flyers)...
+    sq[0] |= 0x10;    // ...from now; the game turns it back on by itself
+    return 1;
+}
+```
+
+Weigh each enemy so heavy ones move less: the Concussion Cannon uses
+`mass = 1 + full_health / 256 / 6 + radius / 25`, halved for flyers (`height` above 35). Push half along the aim and
+half straight away from the muzzle, stronger close up. Credit every enemy you hit with `jfg_weapon_credit` (600
+ticks), so kills by the slam that follows are the cannon's.
+
+<Callout type="info">
+There is a second "in the air" flag that keeps steering off until the enemy touches something, but some enemies
+steer even while in the air, and the push is lost. The move count above works for all of them. An enemy the game
+doesn't move this way (`fling` returns 0) can be slid by moving its position (its object's +0x0C) each tick, testing
+walls with `jfg_level_ray`.
+</Callout>
+
+### Slam them into walls
+
+After each of its moves, a flung enemy's control data **+0x18** says what it touched: **0x20 a wall** (0x10 the floor,
+0x40 a ceiling). That flag lasts one move, and enemies move every other tick, so also look ahead along its speed with
+`jfg_level_ray` and count a surface that isn't flat (its normal's y between -0.7 and 0.7) as a wall.
+
+On a wall, if it was going fast enough (the Concussion Cannon wants 3.5 units a move at its recent top speed):
+- take health off it by how fast it hit (`jfg_object_health`, `jfg_object_set_health`), crediting it again;
+- set off an effect: your impact object, and the game's small explosion **type 3** (a flash, a ring, no damage);
+- play a slam sound, pitched by the speed;
+- set its x and z speed to 0. A flung enemy that doesn't bounce keeps pushing into the wall otherwise.
+
+Keep following enemies even when their health hits 0: a small one that dies from the blow should still fly into the
+wall and slam.
+
+### Put a gun in the hand
+
+The gun is a model of your pack, given with `jfg_weapon_set_held_model`. The game draws it on the hero's hand with the
+hand's own turn, at the hero's own size, the way it draws its own guns. So build it in **the hand's frame**:
+
+- **The grip at the origin.** That point sits in the hero's hand.
+- **The barrel toward about (0.75, -0.36, -0.55)** in game axes (Y up): forward, down and out. In Blender (Z up) that's
+  (0.75, 0.55, -0.36). It looks odd in Blender and comes out straight in the hand.
+- **About 70 units** from the grip to the muzzle tip. 1 Blender unit is 1 game unit.
+- **An empty named `barrel`** at the muzzle tip: shots, and the point the game keeps at control data +0x544, leave
+  from there.
+- **Static**: one mesh, no armature. White vertex colours, the light painted into its textures (the game lights it
+  by the vertex colours only).
+
+An easy way: model the gun pointing along -Y with its top up and the grip at the origin, then turn it into place
+with a script, so you can change the angle and length and run it again:
+
+```python
+import bpy
+from mathutils import Matrix, Vector
+
+AIM = Vector((0.75, 0.55, -0.36)).normalized()   # (0.75, -0.36, -0.55) in game axes
+UP = Vector((0, 0, 1))
+top = (UP - UP.dot(AIM) * AIM).normalized()
+side = (-AIM).cross(top)
+# The model's x, y and z go to side, -AIM and top: its -Y (the barrel) points along AIM.
+turn = Matrix((side, -AIM, top)).transposed().to_4x4()
+
+gun = bpy.data.objects["gun"]                     # built along -Y, top up, grip at the origin
+tip = Vector((0, -30, 0))                         # its muzzle tip as built
+place = turn @ Matrix.Scale(70 / tip.length, 4)   # 70 units from grip to muzzle
+gun.data.transform(place)
+
+barrel = bpy.data.objects.new("barrel", None)     # the empty at the muzzle tip
+bpy.context.collection.objects.link(barrel)
+barrel.location = place @ tip
+```
+
+Export the gun **and** the empty together as glTF Binary (`.glb`, +Y Up, vertex colours on), then turn it into a model
+with `models.import_new` as in [A thrown weapon](/tutorials/thrown-weapon#turn-the-models-and-the-icon-into-game-data).
+The `jfg_assets.json` entry for the model is all the hand needs: `jfg_asset_number("mymod:model_cannon")`.
+
+<Callout type="warning">
+Lupus carries his guns on his back, pointing forward along his body, not in a hand. A model made for Vela and Juno's
+hand looks off on him: try it with him, or keep the weapon to the other two.
+</Callout>
+
+### Effects that fade
+
+The blast's wave and the slam's impact are pack objects that grow and fade out. An object type made the usual way
+(behaviour `0035`) can't fade: the game sets it fully solid again every frame. Use behaviour **`007E`** instead, which
+draws with an opacity your mod writes into the object:
+
+```json
+{ "table": 46, "data": 47, "append": "objdef_wave", "copyOf": 427,
+  "set": [ { "at": 0, "hex": "3f800000" }, { "at": 28, "hex": "007E" }, { "at": 208, "hex": "00000000" } ],
+  "fixups": [ { "at": 224, "type": "u32", "ref": "model_wave" } ] }
+```
+
+(+0x1C is 28: the behaviour; +0xD0 is 208: no physics, it hovers where you put it.) Then write the opacity, 0 to
+255, as an `int` at the object's **+0x8C**:
+
+```c
+void* wave = jfg_spawn(&s);
+*(int*)((char*)wave + 0x8C) = 255;            // straight away: it starts at 0, and 0 isn't drawn
+// each tick, as it grows (jfg_object_set_scale) and flies on:
+*(int*)((char*)wave + 0x8C) = (int)(140 * left);   // left: 1 down to 0 over the end of its life
+```
+
+The cannon's wave is three cones inside each other, opening along the aim. It flies forward slowing down, grows and
+fades out over 50 ticks. While the hero aims, start it further ahead and smaller, or the view is inside it. Without
+your pack's objects, the game's flat ring (`jfg_shockwave`) is a fallback.
+
+### Shake and recoil
+
+Push the hero back and shake the view by how far it was charged:
+
+```c
+jfg_hero_push(hero, -dir[0] * 3 * strength, -dir[2] * 3 * strength, (int)(8 + 10 * strength));
+jfg_camera_shake((int)(3 + 9 * strength), (int)(300 + 700 * strength));
+```
+
+[`jfg_camera_shake`](/c-api/camera#jfg_camera_shake-) shakes whichever camera is on, the dual-stick and aiming views
+included. The game's strongest hits shake 15 to 25; keep a weapon you fire often well below that, and give players
+an option for it.
+
+### Ammo
+
+As in [A thrown weapon](/tutorials/thrown-weapon#ammo): enemy drops (the charge orb as the pickup), plasma shotgun
+pickups giving charges too (`jfg_on_hud_message`, the messages 0x39, 0x48, 0x57, 0x66, each + 3), a share of the
+level's plasma shotgun pickups pointed at the cannon, and a recharge. The Concussion Cannon also has an **Infinite
+Ammo** option, on by default: it keeps the ammo at the most it holds and fires with `f->take_ammo = 0`.
+</Steps>
+
+## Options worth giving
+
+Players feel a weapon like this differently, so the Concussion Cannon lets them set its range, cone width, force,
+blast damage (0 by default: it only knocks back), wall slam damage, recoil, screen shake, whether Tribals are pushed
+(never hurt), and each ammo source. Read them each tick with `recomp_get_config_double` so changes in the mods menu
+work during play.
+
+## Learned the hard way
+
+- **A push on an enemy's speed alone is lost** on its next move. Fling it the game's way (above), or move its position.
+- **Give walkers some lift.** A flat push touches the floor on the first move and hands control back.
+- **The wall flag lasts one move.** Look ahead with `jfg_level_ray` too, or fast enemies pass the moment.
+- **Behaviour `0035` can't fade.** Use `007E` and write the opacity to +0x8C, starting at 255.
+- **While aiming, the gun's barrel isn't kept.** Place aiming effects from the hero, ahead of the view.
+- **Lupus has no hand.** Check your held model on him.

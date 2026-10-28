@@ -7,5 +7,6 @@ export default {
   'stock-level': 'Change a stock level',
   'c-mod': 'A first code mod',
   'thrown-weapon': 'A thrown weapon',
+  'charged-weapon': 'A charged weapon',
   'texture-pack': 'An HD texture pack',
 };
