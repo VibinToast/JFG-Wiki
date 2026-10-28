@@ -1,0 +1,195 @@
+---
+title: 'Tutorial: a thrown weapon'
+description: Make a new thrown weapon for Jet Force Gemini Recompiled from scratch - register it, throw your own 3D object along the hero's aim, model it in Blender, give it a HUD icon, ammo and kill credit - with the Singularity black hole as the example.
+---
+
+# A thrown weapon
+
+How the **Singularity** is made: a new weapon the hero throws like a grenade. Where it lands it opens a spinning black
+hole that pulls enemies in, then collapses in an explosion. It sits with the other weapons, has its own 3D models, HUD
+icon, sounds, ammo pickups and kill credit, and needs no change to the game's data except its own new objects.
+
+Each step names the API it uses; the reference is [C API: Weapons](/c-api/weapons). For a weapon that **isn't thrown**,
+everything here applies except the throw: see [Not thrown](#not-thrown) at the end.
+
+<Callout type="info">
+You need the C mod setup from [A first code mod](/tutorials/c-mod), Blender for the models, and the decomp's
+`jfgformats` Python package (0.7.0 or newer) to turn the models and the icon into game data.
+</Callout>
+
+<Steps>
+### Register the weapon
+
+On your first game tick, register it by name. It borrows a **host**, the stock weapon it acts like: here the grenades
+(8), thrown, with the grenades' stats row. The id that comes back is for this run only; the name is what's saved.
+
+```c
+int weapon_id = -1;
+
+RECOMP_CALLBACK("*", jfg_on_game_tick) void tick(int frames) {
+    if (weapon_id < 0) {
+        JfgWeaponDef d = { "mymod:singularity", "Singularity", "Singularities",
+                           8,      // host: the grenades
+                           -1,     // charge: as it is
+                           1,      // thrown
+                           8,      // stats row from the grenades
+                           6, 3, 2 };  // max ammo, start ammo, a pickup's ammo
+        weapon_id = jfg_weapon_register(&d);
+    }
+    // Give it for testing: jfg_hero_give_weapon(weapon_id, -1);
+}
+```
+
+Next / previous weapon now reaches it, the hero throws it with the grenade throw, and what the player carries is saved
+with their file.
+
+### Throw your own object
+
+By itself the weapon throws a grenade. To throw your own object, cancel the game's shot when the hero lets go and
+spawn yours along the hero's aim, the way the game aims a grenade: the aim's turn, and its pitch while the hero aims
+(or has a target), else a fixed lob of about 34 degrees.
+
+```c
+static float sin_a(unsigned int a) {      // the game's angles: 0x10000 a turn
+    float x = (float)(short)(a & 0xFFFF) * (3.14159265f / 32768.0f);
+    float y = 1.27323954f * x - 0.405284735f * x * (x < 0 ? -x : x);
+    return 0.225f * (y * (y < 0 ? -y : y) - y) + y;
+}
+
+RECOMP_CALLBACK("*", jfg_on_weapon_fire) void fire(JfgWeaponFire* f) {
+    if (f->weapon != weapon_id) return;
+    const int core = jfg_asset_number("mymod:objtype_core");          // your object (step 4)
+    const float* p = (const float*)((char*)f->hero + 0x0C);
+    const unsigned char* c = *(unsigned char**)((char*)f->hero + 0x68); // the hero's control data
+    unsigned int yaw = *(unsigned short*)(c + 0x1CA), pitch = 0x1800;
+    if (c[0x568] == 5 || c[0x568] == 11 || *(int*)(c + 0xFC) != 0) pitch = *(unsigned short*)(c + 0x1CC);
+    const float cp = sin_a(pitch + 0x4000), speed = 10.0f;
+    JfgSpawn s = { core, p[0], p[1] + 32, p[2],
+                   -sin_a(yaw) * cp * speed, sin_a(pitch) * speed, -sin_a(yaw + 0x4000) * cp * speed, (int)yaw };
+    if (core >= 0 && jfg_spawn(&s) != 0) f->cancel = 1;              // one ammo is used
+}
+```
+
+Your object flies, bounces and comes to rest by the game's own physics. Watch it each tick:
+`jfg_object_physics(obj) & 2` is "at rest". A ball keeps rolling for a long time, so the Singularity also opens on
+its **first bounce** (its vertical speed, at the object's +0x20, goes from falling to rising) and brakes it.
+
+### Do something where it lands
+
+The black hole is a second object of the pack, with no physics, so it hovers where it's spawned. The mod spins it (an
+object's turn is its first u16) and grows it (`jfg_object_set_scale`). Each tick it pulls the enemies around it:
+
+```c
+JfgNear q = { x, y, z, reach, 0 };
+JfgEnemy found[24];
+int n = jfg_enemies_near(&q, found, 24);
+for (int i = 0; i < n; i++) {
+    JfgEnemyTraits t;
+    float mass = 1.0f;
+    if (jfg_enemy_traits(found[i].object, &t)) {
+        mass = 1.0f + t.full_health / 256.0f / 6.0f + t.radius / 25.0f;  // tough and big: heavy
+        if (t.height > 35.0f) mass *= 0.5f;                              // flyers: light
+    }
+    // move the enemy's position (its object's +0x0C) toward x, z by pull / mass
+}
+```
+
+Enemies move by speed and steer back to their path, so moving their **position** sticks, and flyers return to their
+flight path when it's over. Check `jfg_line_of_sight` so nothing is pulled through walls.
+
+When it's done, credit what it can reach, then set off the game's grenade explosion and your own extra damage:
+
+```c
+for (int i = 0; i < n; i++) jfg_weapon_credit(found[i].object, weapon_id, hero, 600); // kill feeds show your weapon
+JfgExplosion e = { 0, x, y, z, hero };       // type 0: the grenade's look, sound and damage
+jfg_explosion(&e);
+JfgBlast b = { x, y, z, 210.0f, 10 * 256.0f, 0.25f, hero };
+jfg_blast(&b);
+jfg_object_free(black_hole);
+```
+
+### Model it in Blender
+
+Keep it low-poly, as the game's own objects are: a sphere of 10 x 6 segments and a flat ring make the thrown core
+(about 130 triangles); the black hole is a sphere, a glow shell and two tilted rings (about 550).
+
+- **Z is up, 1 unit is 1 game unit.** Export glTF Binary (`.glb`), +Y Up, vertex colours on.
+- **Paint the vertex colours white.** The game lights these objects by their vertex colours only: white shows the
+  texture as it is.
+- **Textures: your own, small.** One image per material. **A texture with soft see-through edges must be 32 x 32 or
+  smaller** (it's kept as full-colour RGBA32); a bigger one keeps only on/off transparency.
+- Name see-through materials so you know to make them double-sided.
+
+### Turn the models and the icon into game data
+
+A short Python script with `jfgformats` makes everything your pack carries, from your own files only (it reads
+nothing from the ROM):
+
+```python
+from jfgformats import models, sprites
+from jfgformats.png import read_png
+
+r = models.import_new("art/models/core.glb", name="core")
+# r["packed"]: the model entry; r["textures"]: its new textures; r["textureRefs"]: where their numbers go
+
+w, h, rgba = read_png(open("art/hud_icon.png", "rb").read())     # about 32 x 22, as the game's icons
+icon = sprites.write([(w, h, rgba)], anchor=sprites.HUD_ICON_ANCHOR, origin=(39 - w // 2, 13 - h // 2))
+```
+
+The script writes each piece to a file and lists them in your mod's `jfg_assets.json`:
+
+| Piece | `table` / `data` | Notes |
+|---|---|---|
+| Each model texture | 1 / 0 | `"append": "tex_core_0"` |
+| The model | 0x26 / 0x27 | `"packed": true`; a fixup per texture: `{"at": ref.at, "type": "u16", "ref": "tex_core_0", "add": 32768}` |
+| Its object definition | 0x2E / 0x2F | `"copyOf": 427` (a stock pickup: one model, physics, a collision sphere) with `"set"`: +0x00 its scale (f32 1.0), +0x1C behaviour `0035` (no game code runs), and for a hovering object +0xD0 `00000000` (no physics); a fixup at +0xE0 (`u32`) to the model |
+| The object type | `"objtypes": [{"append": "objtype_core", "def": "objdef_core"}]` | gives it an object id: `jfg_asset_number("mymod:objtype_core")` |
+| The icon's 2D textures | 3 / 2 | appended in order, before the sprite |
+| The icon sprite | 0x16 / 0x15 | a fixup at +0 (`s16`) to its first texture |
+
+Add the files to `additional_files` in your `mod.toml`. A copy of definition 427 is made from the player's own game at
+start, so your pack carries none of the game's data.
+
+### Give it an icon and sounds
+
+```c
+jfg_weapon_set_icon(weapon_id, jfg_asset_number("mymod:sprite_icon"));      // the game's panel and strip
+jfg_weapon_set_icon_image(weapon_id, 176, 120, icon_big);                    // a sharp one for mods' HUDs
+```
+
+Name it in your own HUD with `jfg_weapon_info(id, &info)` and `info.display`. Sounds are your own WAV or OGG files in
+`jfg_sounds.json`: `jfg_sound_play` for a moment, `jfg_sound_loop` and `jfg_sound_set` for a hum that changes pitch.
+
+### Ammo
+
+The game has no ammo for a new weapon, so give it some. The Singularity has four ways, each an option:
+- **Drops:** in `jfg_on_kill`, now and then spawn a small pickup (its own core model) where the enemy died; when the
+  hero walks into it, add one (`jfg_hero_set_ammo`, within `max_ammo`) and play the game's pickup sound
+  (`jfg_game_sound_flat(0x8A)`).
+- **With grenades:** `jfg_on_hud_message` sees the grenade pickup messages (0x39, 0x48, 0x57, 0x66, each + 8).
+- **Pickups:** point some of the level's grenade pickups at your weapon with `jfg_weapon_pickup_set`.
+- **Recharge:** add one every so many seconds while below the maximum.
+</Steps>
+
+## Not thrown
+
+A weapon that shoots instead of throws needs only a few changes:
+- Register it with `thrown = 0` and a `host` that is held and timed the way it should be: the pistol (0), machine gun
+  (2) or sniper rifle (7). Its `row_from` sets its refire, speed and spread.
+- To keep the host's shot, do nothing: it fires as the host. To fire your own, cancel in `jfg_on_weapon_fire` and make
+  the shot: `jfg_fire_bolt` for a laser bolt, or `jfg_spawn` of your own object (no physics) that you move each tick and
+  test against enemies (`jfg_enemies_near`) and walls (`jfg_level_ray`), crediting what it kills. See the example on
+  [C API: Weapons](/c-api/weapons#example-a-weapon-that-isnt-thrown).
+- The host's fire sound plays unless you cancel the shot; replace it with your own (`jfg_sound_replace_use`, or
+  `jfg_sound_play` when you fire).
+- **In the hand**, a new weapon shows what the grenades do: an empty hand for Vela and Juno, a grenade for Lupus. A
+  gun of your own in the hand is planned.
+
+## Learned the hard way
+
+- **Floats after a pointer.** In a mod's call, a `float` that comes after a pointer argument is passed like an
+  integer. The port handles this for its helpers; keep it in mind if you write your own.
+- **Keep the name, not the number.** Weapon ids, object ids and sprite numbers are given out at each start.
+- **The game's HUD is hidden** in scripted test runs that warp into a level. Test HUD work by playing, or with a debug
+  line drawn by your mod.
+- **Mods that keep an array per weapon** (16 entries) must handle ids above 15.

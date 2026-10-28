@@ -6,5 +6,6 @@ export default {
   planet: 'A galaxy of your own',
   'stock-level': 'Change a stock level',
   'c-mod': 'A first code mod',
+  'thrown-weapon': 'A thrown weapon',
   'texture-pack': 'An HD texture pack',
 };

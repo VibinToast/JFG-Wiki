@@ -1,241 +1,353 @@
 ---
 title: 'C API: Weapons'
-description: Weapon stats, ammo, giving weapons, new weapons in virtual slots, and fire, select and projectile-hit events in the Jet Force Gemini Recompiled C mod API.
+description: New weapons of your own (any number, thrown or not), owning weapons and ammo, firing your own shots, pack objects and explosions for weapons, HUD icons, kill credit and weapon stats in the Jet Force Gemini Recompiled C mod API.
 ---
 
 # Weapons
 
-The heroes' weapons: their stats, who has what and how much ammo, new weapons, and events for firing, switching and
-hits. How the game's weapon table works and what each field does is in [Weapons](/api/weapons).
-
-The game has 16 weapon slots (0-15). New weapons get **virtual slots**, 16 and up: while one is held, the game runs
-its *base* weapon's aim, reticle and animations, and Jet Force Gemini: Recompiled swaps the gun model, HUD icon and projectile.
+The heroes' weapons from code: **new weapons of your own**, who has what and how much ammo, your own shots and
+effects, HUD icons and kill credit. How the game's weapon table works and what each field does is in
+[Weapons](/api/weapons). A full walk-through of a new thrown weapon is the tutorial
+[A thrown weapon](/tutorials/thrown-weapon).
 
 | Entry | Brief | Status |
 |---|---|---|
+| `jfg_weapon_register` | A new weapon, by name | <Status s="built" /> |
+| `jfg_weapon_find`, `jfg_weapon_count`, `jfg_weapon_info` | Every weapon, stock and modded | <Status s="built" /> |
+| `jfg_weapon_set_icon`, `jfg_weapon_set_icon_image` | A new weapon's HUD icons | <Status s="built" /> |
+| `jfg_hero_weapon`, `jfg_hero_select_weapon` | The weapon in hand; switching | <Status s="built" /> |
+| `jfg_hero_has_weapon`, `jfg_hero_give_weapon`, `jfg_hero_take_weapon` | Owning weapons | <Status s="built" /> |
+| `jfg_hero_ammo`, `jfg_hero_set_ammo` | Ammo | <Status s="built" /> |
+| `jfg_weapon_pickup_set`, `jfg_weapon_pickup_get` | What a weapon pickup gives | <Status s="built" /> |
+| `jfg_weapon_credit` | Kills by your weapon count as its | <Status s="built" /> |
+| `jfg_on_weapon_fire` | Before a shot: replace it with your own | <Status s="built" /> |
+| `jfg_spawn`, `jfg_asset_number`, `jfg_object_*` | Your pack's objects (a thrown core, a projectile) | <Status s="built" /> |
+| `jfg_explosion`, `jfg_blast`, `jfg_shockwave` | The game's explosions, damage, ring effect | <Status s="built" /> |
+| `jfg_enemy_traits` | How heavy and how high an enemy is | <Status s="built" /> |
+| `jfg_world_to_screen` | Where a point shows on screen | <Status s="built" /> |
 | `jfg_weapon_stat_get`, `jfg_weapon_stat_set` | A slot's damage, rate, speed... | <Status s="partial" /> |
-| `jfg_weapon_current` | The weapon a player holds | <Status s="planned" /> |
-| `jfg_weapon_has`, `jfg_weapon_give`, `jfg_weapon_take` | Owning weapons | <Status s="planned" /> |
-| `jfg_weapon_get_ammo`, `jfg_weapon_set_ammo`, `jfg_weapon_max_ammo` | Ammo | <Status s="planned" /> |
-| `jfg_weapon_select` | Switch the held weapon | <Status s="planned" /> |
-| `jfg_weapon_register` | A new weapon in a virtual slot | <Status s="planned" /> |
-| `jfg_on_weapon_fire` | Before a shot: change or replace it | <Status s="planned" /> |
-| `jfg_on_weapon_select` | The player switched weapon | <Status s="planned" /> |
-| `jfg_on_projectile_spawned` | A shot's projectile was made | <Status s="planned" /> |
-| `jfg_on_projectile_hit` | A projectile hit something | <Status s="planned" /> |
-| `jfg_projectile_spawn` | Fire a projectile from code | <Status s="planned" /> |
-| `"weapons"` in `jfg_assets.json` | Fill slot 15 and set slot behaviour as data | <Status s="planned" /> |
+| A new weapon's model in the hero's hand | | <Status s="planned" /> |
+| `jfg_on_weapon_select`, `jfg_on_projectile_spawned`, `jfg_on_projectile_hit` | More weapon events | <Status s="planned" /> |
+
+## How new weapons work
+
+The game has 16 weapon slots: 0-14 are the heroes' weapons and 15 is a cut proximity mine. There is no room for more
+in the game's own data, so **slot 15 is a carrier**: Jet Force Gemini: Recompiled keeps every new weapon itself, and
+whichever one is in the hero's hand borrows slot 15. Its ammo, its row of stats and its name are copied in, so the
+game's own code shows, aims, fires and throws it.
+
+- **Any number of weapons.** Each registers **by name** (`"mymod:hose"`) and gets an id for this run: 16, 17, ... in
+  the order mods register. Keep the name, not the number: another player's mod list gives other numbers.
+- **Switching.** Next / previous weapon steps through every weapon the hero owns, the new ones included.
+- **Firing.** A new weapon fires as its **host**, a stock weapon (its shot, aim and timing), unless your
+  `jfg_on_weapon_fire` cancels the shot and makes your own.
+- **Saving.** Owned new weapons and their ammo are saved with the save file, by name. A weapon whose mod is removed
+  stays in the file and comes back when the mod does.
+- **Randomizers.** All weapons, stock and new, are in one list (`jfg_weapon_count`, `jfg_weapon_info`); any weapon
+  pickup can be pointed at any weapon (`jfg_weapon_pickup_set`).
+
+## New weapons
+
+### jfg_weapon_register <Status s="built" />
+
+```c
+/** @brief A new weapon. */
+typedef struct {
+    const char* name;         ///< Unique, "mod_id:weapon" (no spaces)
+    const char* display;      ///< Its name in the HUD and pick-up messages ("" = name)
+    const char* ammo_display; ///< Plural, for "more ammo" messages ("" = display)
+    int host;         ///< The stock weapon (0-14) whose shot it fires and how it's held; -1 the default laser bolt
+    int charge;       ///< The charge given to the host's shot (a mine's type), -1 as it is
+    int thrown;       ///< 1: thrown (the hero's throw animation), 0: as the host
+    int row_from;     ///< The stock weapon whose stats row it uses (refire, speed, spread, damage): 0-14
+    int max_ammo;     ///< -1 = the row's
+    int start_ammo;   ///< Given with the weapon, -1 = the row's
+    int pickup_ammo;  ///< A pickup of it when owned, -1 = the row's
+} JfgWeaponDef;
+
+/**
+ * @brief  Registers a new weapon.
+ * @return Its id for this run (16 and up; the same id again for a name registered before), or -1.
+ * @since  6
+ * @note   Register on your first jfg_on_game_tick. A weapon saved in the file in play is given back as it registers.
+ *         A thrown weapon whose row has no throw delay gets the grenade's (the hero lets go 26 ticks into the throw).
+ */
+int jfg_weapon_register(const JfgWeaponDef* def);
+```
+
+### jfg_weapon_find, jfg_weapon_count, jfg_weapon_info <Status s="built" />
+
+```c
+typedef struct {
+    char name[48];    ///< As jfg_weapon_find takes it
+    char display[40]; ///< The name to show (stock weapons: in the language shown)
+    int modded;       ///< 1 for a mod's weapon
+    int host;         ///< Stock weapons: their own number
+    int thrown;       ///< -1: the game's own rule (stock weapons)
+    int max_ammo;
+} JfgWeaponInfo;
+
+/**
+ * @brief  Weapons by name ("stock:pistol" .. "stock:cluster_bombs", "port:proximity_mine", "mod_id:weapon"); how many
+ *         ids there are (0 .. count - 1 are all weapons); one weapon's details.
+ * @return find: the id or -1; info: 1, or 0 for no such weapon.
+ * @since  6
+ * @note   Show a weapon's name with info.display, for any id. The game's own texts only cover slots 0-15.
+ */
+int jfg_weapon_find(const char* name);
+int jfg_weapon_count(void);
+int jfg_weapon_info(int id, JfgWeaponInfo* out);
+```
+
+### jfg_weapon_set_icon, jfg_weapon_set_icon_image <Status s="built" />
+
+```c
+/**
+ * @brief  A new weapon's HUD icons. set_icon: a 2D sprite of your pack (about 32 x 22, as the game's), shown in the
+ *         game's weapon panel, its weapon strip and the pause screen while the weapon is in hand. set_icon_image: a big
+ *         picture (at most 512 x 512, colours 0xRRGGBBAA, copied), drawn sharp at the window's resolution wherever a
+ *         mod draws the weapon's icon (jfg_hud_weapon_icon: Ammo Ring, Kill Feed), about 44 units wide at scale 1.
+ * @param  sprite  Its number this run: jfg_asset_number("mod_id:sprite name"); -1 gives slot 15's own back.
+ * @since  6
+ * @note   Make the sprite with jfgformats' sprites.write (see the tutorial). jfg_hud_weapon_icon takes any weapon id.
+ */
+void jfg_weapon_set_icon(int id, int sprite);
+void jfg_weapon_set_icon_image(int id, int w, int h, const unsigned int* rgba);
+```
+
+## Owning weapons and ammo
+
+### jfg_hero_weapon, jfg_hero_select_weapon <Status s="built" />
+
+```c
+/**
+ * @brief  The weapon in the first player's hand (any id: 0-14 stock, 15 the proximity mine, 16 up new ones), -1 none;
+ *         switching to the next (1) or previous (-1) weapon, as the game's buttons do.
+ * @since  5 (new weapons' ids since 6)
+ */
+int  jfg_hero_weapon(void);
+void jfg_hero_select_weapon(void* hero, int direction);
+```
+
+### jfg_hero_has_weapon, jfg_hero_give_weapon, jfg_hero_take_weapon <Status s="built" />
+
+```c
+/**
+ * @brief  The first player's hero: owns it?; give it (ammo -1 = its start ammo; owned already: added, up to its
+ *         capacity); take it away (not the pistol; in hand: the hero holds the next weapon).
+ * @since  6
+ */
+int  jfg_hero_has_weapon(int id);
+void jfg_hero_give_weapon(int id, int ammo);
+void jfg_hero_take_weapon(int id);
+```
+
+### jfg_hero_ammo, jfg_hero_set_ammo <Status s="built" />
+
+```c
+/**
+ * @brief  The first player's ammo for a weapon (any id; a new weapon not owned: -1), and setting it.
+ * @since  5 (new weapons since 6)
+ * @note   set_ammo doesn't cap it: keep it within jfg_weapon_info's max_ammo.
+ */
+int  jfg_hero_ammo(int weapon);
+void jfg_hero_set_ammo(int weapon, int ammo);
+```
+
+### jfg_weapon_pickup_set, jfg_weapon_pickup_get <Status s="built" />
+
+```c
+/**
+ * @brief  A weapon pickup (an object of kind JFG_KIND_WEAPON) gives that weapon from now on; the weapon it gives.
+ * @since  6
+ * @note   Its model stays the one it has. Pickups belong to the level: point them again after each level change.
+ */
+void jfg_weapon_pickup_set(void* pickup, int id);
+int  jfg_weapon_pickup_get(void* pickup);
+```
+
+## Firing and kills
+
+### jfg_on_weapon_fire <Status s="built" />
+
+```c
+typedef struct {
+    int weapon;     ///< Any id, new ones included
+    int character;  ///< 0 Vela, 1 Juno, 2 Lupus
+    void* hero;     ///< The hero's object
+    int charge;     ///< The plasma shotgun's charge as the game keeps it
+    int cancel;     ///< Set 1: the game fires nothing (fire your own)
+    int take_ammo;  ///< With cancel: 1 (default) uses one ammo, 0 none
+} JfgWeaponFire;
+
+/**
+ * @brief  The first player's hero is about to fire a shot, or let go of a throw, before the game makes it.
+ * @since  6
+ * @note   For a thrown weapon this comes as the hero lets go, not on the button press.
+ */
+RECOMP_CALLBACK("*", jfg_on_weapon_fire) void my_fire(JfgWeaponFire* f);
+```
+
+### jfg_weapon_credit <Status s="built" />
+
+```c
+/**
+ * @brief  Credits what your weapon hurts: if the victim (a squad member) dies within ticks, jfg_on_kill reports your
+ *         weapon and the shooter, so kill feeds and stats show it.
+ * @param  ticks  1/60 s, at most 600. Dying enemies may lie down and bleed out first: credit generously.
+ * @since  6
+ * @note   Your weapon hurts in its own ways (health, blasts, explosions), which the game counts under whatever is in
+ *         hand. Credit as you hurt; call again to renew.
+ */
+void jfg_weapon_credit(void* victim, int weapon, void* shooter, int ticks);
+```
+
+## Objects and effects for weapons
+
+### jfg_spawn, jfg_asset_number <Status s="built" />
+
+```c
+typedef struct {
+    int object;          ///< An object id: a stock one, or your pack's object type (jfg_asset_number)
+    float x, y, z;
+    float vx, vy, vz;    ///< Units a tick (needs a physics block in its definition)
+    int yaw;             ///< 0-0xFFFF
+} JfgSpawn;
+
+/**
+ * @brief  An object at a point, as a shot is made (it goes with the level). With a physics block in its definition it
+ *         flies at vx, vy, vz and falls, bounces and comes to rest by the game's own physics.
+ * @return The object, or NULL.
+ * @since  6
+ */
+void* jfg_spawn(const JfgSpawn* spawn);
+
+/**
+ * @brief  The number your pack's appended entry or object type got this start ("mod_id:append name", as your
+ *         jfg_assets.json names it), -1 if no loaded mod adds it. An object type's number is the object id to spawn.
+ * @since  6
+ */
+int jfg_asset_number(const char* name);
+```
+
+### jfg_object_free, jfg_object_scale, jfg_object_set_scale, jfg_object_physics <Status s="built" />
+
+```c
+/**
+ * @brief  Remove an object; its size (1.0 = as its definition makes it); its physics flags: 1 in water, 2 at rest
+ *         (landed), 4 riding a moving object, -1 when it has no physics.
+ * @since  6
+ * @note   An object's turn is its first u16 (yaw, 0x10000 a turn): spin it by writing there.
+ */
+void  jfg_object_free(void* object);
+float jfg_object_scale(void* object);
+void  jfg_object_set_scale(void* object, float scale);
+int   jfg_object_physics(void* object);
+```
+
+### jfg_explosion, jfg_blast, jfg_shockwave <Status s="built" />
+
+```c
+typedef struct { int type; float x, y, z; void* owner; } JfgExplosion;
+typedef struct { float x, y, z, radius, damage, seconds; void* owner; } JfgBlast;
+typedef struct { float x, y, z, inner, outer, inner_speed, outer_speed; int hold, fade; } JfgShockwave;
+
+/**
+ * @brief  explosion: one of the game's explosions with its look, sound and damage (type 0 the grenade's, 4 under
+ *         water). blast: damage only, strongest at the middle and less out to the radius, fading over the seconds
+ *         (256 a unit of health; 16 at a time). shockwave: the game's flat ring, its radii growing by their speeds
+ *         (negative: shrinking), held, then faded (radii and speeds within -100..100).
+ * @since  6
+ * @note   The game's explosions hurt the heroes too, as grenades do.
+ */
+void jfg_explosion(const JfgExplosion* explosion);
+void jfg_blast(const JfgBlast* blast);
+void jfg_shockwave(const JfgShockwave* wave);
+```
+
+### jfg_enemy_traits <Status s="built" />
+
+```c
+typedef struct {
+    int full_health;  ///< 256 a unit: what its squadron gives each member
+    int health;
+    float radius;     ///< Its hit sphere
+    float scale;
+    float height;     ///< Above the floor under it: flyers are high up
+    float floor;
+} JfgEnemyTraits;
+
+/**
+ * @brief  What a squad member is like, for weighing it (a pull that moves heavy ones less, flyers more).
+ * @return 1, or 0 if it isn't a squad member.
+ * @since  6
+ */
+int jfg_enemy_traits(void* enemy, JfgEnemyTraits* out);
+```
+
+### jfg_world_to_screen <Status s="built" />
+
+```c
+/**
+ * @brief  Where a point of the level shows on screen this frame, in the overlay's units: out[0] x, out[1] y,
+ *         out[2] its distance in front of the camera, out[3] overlay units per level unit there.
+ * @return 1 if it is in front of the camera.
+ * @since  6
+ * @note   For markers drawn with the overlay. Overlay pictures cover the game; hide one behind a wall by testing the
+ *         line from the camera (jfg_camera_get) with jfg_level_ray. Picture ids are shared by all mods.
+ */
+int jfg_world_to_screen(const float* world, float* out);
+```
 
 ## Stats
 
 ### jfg_weapon_stat_get, jfg_weapon_stat_set <Status s="partial" />
 
-```c
-/** @brief Weapon table fields. Ranges as on the Weapons page. */
-typedef enum {
-    JFG_WSTAT_DAMAGE,       ///< 0-255
-    JFG_WSTAT_DELAY,        ///< Frames between shots, 0-255
-    JFG_WSTAT_THROW_DELAY,  ///< Frames from press to release, 1-127
-    JFG_WSTAT_LIFETIME,     ///< Projectile lifetime, 1-255
-    JFG_WSTAT_SPREAD_X,     ///< 0-8192
-    JFG_WSTAT_SPREAD_Y,     ///< 0-8192
-    JFG_WSTAT_SPEED,        ///< x100: 10-200000 for 0.1-2000
-    JFG_WSTAT_MAX_AMMO,
-    JFG_WSTAT_START_AMMO,
-} JfgWeaponStat;
-
-/**
- * @brief  Reads or sets a field of a weapon slot's row, for as long as the mod is loaded.
- * @param  weapon  Slot 0-15, or a virtual slot.
- * @target 4
- * @lua    jfg.weapon(n, fields), jfg.weapon_stats(n)  (built, slots 0-14)
- * @note   The player's F9 Weapons settings win over a mod's values, as in Lua.
- */
-int  jfg_weapon_stat_get(int weapon, JfgWeaponStat field);
-void jfg_weapon_stat_set(int weapon, JfgWeaponStat field, int value);
-```
-
-## Owning weapons and ammo
-
-### jfg_weapon_current, jfg_weapon_select <Status s="planned" />
+A weapon slot's damage, refire, speed and spread from C. Today a new weapon takes them from its `row_from` slot, and
+a pack sets slots 0-14 from Lua (`jfg.weapon(n, fields)`, `jfg.weapon_stats(n)`, see [Weapons](/api/weapons)); the C
+helpers are planned:
 
 ```c
-/**
- * @brief  The weapon a player holds; switching it.
- * @return Slot or virtual slot; -1 for none.
- * @target 4
- */
-int  jfg_weapon_current(int player);
-void jfg_weapon_select(int player, int weapon);
+/** @target 7 */
+int  jfg_weapon_stat_get(int weapon, int field);
+void jfg_weapon_stat_set(int weapon, int field, int value);
 ```
 
-### jfg_weapon_has, jfg_weapon_give, jfg_weapon_take <Status s="planned" />
+## Planned
+
+- **A new weapon's model in the hand.** While a new weapon is in hand, the hero holds what slot 8 (grenades) shows:
+  an empty hand for Vela and Juno, a grenade for Lupus. A gun of your own in the hand is planned.
+- **`jfg_on_weapon_select`, `jfg_on_projectile_spawned`, `jfg_on_projectile_hit`.** Until then, poll
+  `jfg_hero_weapon` and track your own shots.
+- **The hero's aim as a helper.** The tutorial reads it from the hero's control data.
+
+## Example: a weapon that isn't thrown
+
+A rapid green laser on the machine gun's timing, firing Floyd's bolt instead of the game's shot, with its kills
+credited to it:
 
 ```c
-/**
- * @brief  Whether a player owns a weapon; giving one with ammo; taking one away.
- * @param  ammo  Added to what they have, up to the maximum.
- * @target 4
- * @note   Stock slots go in the game's own save; virtual slots in the mod's save data.
- */
-int  jfg_weapon_has(int player, int weapon);
-void jfg_weapon_give(int player, int weapon, int ammo);
-void jfg_weapon_take(int player, int weapon);
-```
+static int laser = -1;
 
-### jfg_weapon_get_ammo, jfg_weapon_set_ammo, jfg_weapon_max_ammo <Status s="planned" />
-
-```c
-/**
- * @brief  A player's ammo for a weapon, and its maximum.
- * @target 4
- */
-int  jfg_weapon_get_ammo(int player, int weapon);
-void jfg_weapon_set_ammo(int player, int weapon, int ammo);
-int  jfg_weapon_max_ammo(int player, int weapon);
-```
-
-## New weapons
-
-### jfg_weapon_register <Status s="planned" />
-
-```c
-/** @brief How a weapon fires. */
-typedef enum { JFG_FIRE_SHOT, JFG_FIRE_THROWN, JFG_FIRE_CHARGE, JFG_FIRE_BEAM } JfgFireMode;
-
-/** @brief A new weapon. */
-typedef struct {
-    const char* name;            ///< "weapon/hose"
-    int  base_slot;              ///< Stock weapon whose aim, reticle, animations and HUD layout it borrows (0-15)
-    int  name_text, ammo_text;   ///< Text handles for its name and its ammo's, -1 for the base slot's
-    int  hud_texture;            ///< HUD icon (a pack texture), -1 for the base slot's
-    int  gun_model[3];           ///< Gun model per hero (Vela, Juno, Lupus), -1 for the base slot's
-    int  max_ammo, start_ammo;
-    int  delay;                  ///< Frames between shots
-    JfgFireMode mode;
-    int  projectile_kind;        ///< A kind for its projectile (Custom enemies), -1 for the base slot's
-    int  damage;                 ///< Passed to the projectile; 0 for none
-} JfgWeaponDef;
-
-/**
- * @brief  Registers a new weapon in a virtual slot.
- * @return Its slot (16 and up), or -1.
- * @target 8
- * @note   Only in jfg_on_register. The weapon cycle walks stock and virtual weapons together; a player only
- *         has it once given (jfg_weapon_give, a pickup kind, a chest).
- */
-int jfg_weapon_register(const JfgWeaponDef* def);
-```
-
-### Slot table as data <Status s="planned" />
-
-Before virtual slots, a pack can fill the game's unused slot 15 with data only: which slot it fires as, its charge,
-whether it's thrown, which row it copies its stats from, and its names. Written by Studio into `jfg_assets.json`:
-
-```json
-{ "weapons": [ { "slot": 15, "firesAs": 11, "charge": 32, "thrown": true, "rowFrom": 12,
-                 "name": "Proximity Mine", "ammoName": "Proximity Mines" } ] }
-```
-
-## Events
-
-### jfg_on_weapon_fire <Status s="planned" />
-
-```c
-/** @brief A shot about to be fired. */
-typedef struct {
-    int        player;
-    int        weapon;     ///< Slot or virtual slot
-    JfgVec3    origin;     ///< The muzzle; changeable
-    JfgVec3    dir;        ///< Aim direction; changeable
-    int        ammo_cost;  ///< Ammo it takes; changeable (0 for free)
-    int        cancel;     ///< 1: no shot, no ammo used (spawn your own projectiles instead)
-} JfgWeaponFire;
-
-/**
- * @brief  Before a hero fires. A new weapon spawns its projectiles here.
- * @target 8
- */
-RECOMP_CALLBACK("*", jfg_on_weapon_fire) void my_fire(JfgWeaponFire* f);
-```
-
-### jfg_on_weapon_select <Status s="planned" />
-
-```c
-/**
- * @brief  The player switched weapon.
- * @target 8
- */
-RECOMP_CALLBACK("*", jfg_on_weapon_select) void my_select(int player, int from, int to);
-```
-
-### jfg_on_projectile_spawned <Status s="planned" />
-
-```c
-/**
- * @brief  A projectile object was made: a bolt, rocket, grenade or mine, from a hero or an enemy.
- * @param  projectile  Its object.
- * @param  owner       Who fired it, or NULL.
- * @param  weapon      The weapon slot for a hero's shot, -1 for an enemy's.
- * @target 8
- */
-RECOMP_CALLBACK("*", jfg_on_projectile_spawned) void my_proj(JfgObject* projectile, JfgObject* owner, int weapon);
-```
-
-### jfg_on_projectile_hit <Status s="planned" />
-
-```c
-/** @brief A projectile hit something. */
-typedef struct {
-    JfgObject* projectile;
-    JfgObject* owner;     ///< Who fired it, or NULL
-    int        weapon;    ///< Slot, or -1 for an enemy's shot
-    JfgObject* target;    ///< What it hit, NULL for the level's geometry
-    JfgVec3    point;     ///< Where
-    JfgVec3    normal;    ///< The surface's facing there
-    int        damage;    ///< Changeable
-    int        cancel;    ///< 1: no damage and no hit effect
-} JfgProjectileHit;
-
-/**
- * @brief  A projectile hit an object or a wall.
- * @target 8
- */
-RECOMP_CALLBACK("*", jfg_on_projectile_hit) void my_hit(JfgProjectileHit* h);
-```
-
-### jfg_projectile_spawn <Status s="planned" />
-
-```c
-/**
- * @brief  Fires a projectile from code: a stock weapon's or a kind's.
- * @param  weapon_or_kind  A weapon slot (its projectile) or a kind handle.
- * @param  owner           Who fired it (for kill credit and friendly fire), or NULL.
- * @param  speed           World units per tick; 0 for the weapon's own.
- * @return The projectile object, or NULL.
- * @target 5
- */
-JfgObject* jfg_projectile_spawn(int weapon_or_kind, JfgObject* owner, const JfgVec3* origin,
-                                const JfgVec3* dir, float speed, int damage);
-```
-
-## Example: a water hose
-
-```c
-static int hose, droplet;
-
-RECOMP_CALLBACK("*", jfg_on_register) void setup(void) {
-    droplet = jfg_find("kind/droplet");          // a small kind with gravity, defined by this mod
-    JfgWeaponDef d = { "weapon/hose", 6, -1, -1, -1, { -1, -1, -1 },
-                       200, 100, 2, JFG_FIRE_SHOT, droplet, 0 };
-    hose = jfg_weapon_register(&d);
+RECOMP_CALLBACK("*", jfg_on_game_tick) void setup(int frames) {
+    if (laser >= 0) return;
+    JfgWeaponDef d = { "mymod:green_laser", "Green Laser", "Green Laser Cells", 2, -1, 0, 2, 200, 100, 50 };
+    laser = jfg_weapon_register(&d);
 }
 
-RECOMP_CALLBACK("*", jfg_on_projectile_hit) void soak(JfgProjectileHit* h) {
-    if (h->weapon != hose || !h->target) return;
-    h->damage = 0;
-    h->cancel = 1;
-    JfgVec3 push = { h->normal.x * -6, 2, h->normal.z * -6 };
-    jfg_object_push(h->target, &push, 10);
+RECOMP_CALLBACK("*", jfg_on_weapon_fire) void fire(JfgWeaponFire* f) {
+    if (f->weapon != laser) return;
+    const float* p = (const float*)((char*)f->hero + 0x0C);           // the hero's position
+    const unsigned short yaw = *(unsigned short*)f->hero;               // facing (see the tutorial for the aim)
+    const float dx = -sinf(yaw * 3.14159265f / 32768.0f), dz = -cosf(yaw * 3.14159265f / 32768.0f);
+    JfgBolt b = { p[0], p[1] + 30, p[2], p[0] + dx * 500, p[1] + 30, p[2] + dz * 500, 2, 35.0f, 20, f->hero, -1 };
+    jfg_fire_bolt(&b);
+    f->cancel = 1;   // no game shot; one ammo used
 }
 ```
+
+<Callout type="info">
+Mods have no maths library: write your own `sinf` / `cosf` (a short approximation is enough), as the tutorial does.
+Kills by the bolt are counted by the game under the slot it picks; when your shot hurts things itself (setting
+health, a blast), credit them with `jfg_weapon_credit` so kill feeds show your weapon.
+</Callout>
