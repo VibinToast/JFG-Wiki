@@ -22,8 +22,12 @@ the mod only sends numbers.
 | `jfg_overlay_draw_image` | Draw an uploaded picture this frame | <Status s="built" /> |
 | `jfg_overlay_polygon` | Draw a filled and/or outlined polygon this frame | <Status s="built" /> |
 | `jfg_overlay_circle` | Draw a filled and/or outlined circle this frame | <Status s="built" /> |
+| `jfg_overlay_text`, `jfg_overlay_text_width` | Draw text with the port's fonts; measure it | <Status s="built" /> |
 | `jfg_hud_in_corners` | Whether the HUD is at the window's edges | <Status s="built" /> |
 | `jfg_on_health_draw` | The health meter is about to be drawn: read it, or replace it | <Status s="built" /> |
+| `jfg_on_weapon_hud` | The weapon panel is about to be drawn: read it, or replace it | <Status s="built" /> |
+| `jfg_hud_weapon_icon`, `jfg_hud_disc` | Place the game's weapon icons, and dark discs under them | <Status s="built" /> |
+| `jfg_game_text`, `jfg_tribal_counts` | The game's texts in the language shown; the area's Tribals | <Status s="built" /> |
 
 ## How it works
 
@@ -109,7 +113,7 @@ window (a 512 x 512 map is sharp up to 1440p at a third of the screen's height).
 
 ```c
 typedef struct {
-    const float* xy;    // count points: x, y, x, y, ... (at most 64)
+    const float* xy;    // count points: x, y, x, y, ... (at most 512)
     int count;
     unsigned int fill;  // 0: not filled (any polygon whose sides do not cross, convex or not)
     unsigned int line;  // 0: no outline
@@ -124,8 +128,8 @@ void jfg_overlay_polygon(const JfgOverlayPolygon* polygon);
 ```
 
 Curved shapes are polygons with enough points: a ring segment is its outer arc one way and its inner arc back
-(8 points along each arc looks round at any size). Concave shapes fill correctly, so one segment is one polygon, with
-no seams inside it.
+(a point every 2 or 3 degrees looks round at any size; fewer and the corners show on a large window). Concave shapes
+fill correctly, so one segment is one polygon, with no seams inside it.
 
 ### jfg_overlay_circle <Status s="built" />
 
@@ -141,6 +145,47 @@ typedef struct {
  * @since  5
  */
 void jfg_overlay_circle(const JfgOverlayCircle* circle);
+```
+
+## Text
+
+### jfg_overlay_text <Status s="built" />
+
+```c
+#define JFG_FONT_LATO      0   // Lato Bold, the menus' font
+#define JFG_FONT_JFG       1   // JFG Bold, the launcher's lettering after the game's
+#define JFG_FONT_LATO_THIN 2   // Lato Regular
+typedef struct {
+    float x, y, size;     // size: from the top of the capitals to the bottom of the descenders, in overlay units
+    unsigned int color;   // 0xRRGGBBAA
+    int align;            // 0: x is the left, 1 the middle, 2 the right
+    int font;
+    const char* text;     // UTF-8, one line
+} JfgOverlayText;
+
+/**
+ * @brief  Draws a line of text this frame, its top at y, with the port's own fonts, at the window's resolution.
+ * @since  5
+ */
+void jfg_overlay_text(const JfgOverlayText* text);
+/** @brief  How wide that text is, in overlay units (for boxes round it). @since 5 */
+void jfg_overlay_text_width(const JfgOverlayText* text, float* width);
+```
+
+Each string is drawn once at the window's pixel size and kept while you keep drawing it, so a count that changes every
+frame is fine. Characters a font lacks are left out (the fonts are Latin).
+
+### jfg_game_text <Status s="built" />
+
+```c
+/**
+ * @brief  One of the game's texts (front_text[id]) in the language shown, into out (size bytes, ended by 0).
+ * @return Its length, 0 if there is none.
+ * @note   Weapon w's name is 0x39 + w; jfg_on_hud_message's msg is a text id, so a pick-up feed can show the game's
+ *         own words.
+ * @since  5
+ */
+int jfg_game_text(int id, char* out, int size);
 ```
 
 ## Lining up with the HUD
@@ -207,6 +252,70 @@ To replace the meter, set `cancel` and draw your own with the overlay. Leave `ca
 split-screen game) unless you draw for each player. `jfg_hud_hide_health` ([Custom heroes](/c-api/heroes)) hides it
 for a hero whose health your mod keeps itself.
 
+## The weapon panel
+
+### jfg_on_weapon_hud <Status s="built" />
+
+```c
+typedef struct {
+    int weapon;           // in hand, 0 the pistol .. 15
+    int ammo, max_ammo;
+    float charge;         // the charge bar, 0..1 (the pistol's heat, a charging weapon's charge); -1: none
+    unsigned int owned;   // bit w: weapon w
+    int character, frames;
+    int cancel;           // set to 1 to leave the game's panel out
+} JfgWeaponHud;
+
+/**
+ * @brief  Each frame the weapon panel is drawn (single player, not in menus or cutscenes), before the game draws it.
+ * @since  5
+ */
+RECOMP_CALLBACK("*", jfg_on_weapon_hud) void my_weapons(JfgWeaponHud* hud);
+```
+
+The game's panel is more than the weapon: cancelling it also leaves out the **pick-up message panel** that slides out
+for ammo, keys and parts, the **Tribal panel** that slides down when a Tribal is saved or lost, and the **weapon
+selector** that slides out on a weapon change. A replacement shows those its own way: the messages still arrive as
+`jfg_on_hud_message` (show them with `jfg_game_text`), the counts come from `jfg_tribal_counts`, and a change of
+`weapon` is a weapon change.
+
+### jfg_hud_weapon_icon <Status s="built" />
+
+```c
+typedef struct {
+    int weapon;
+    float x, y, scale, alpha;  // centre in overlay units; scale 1 = the size the game's panel shows (about 32 wide)
+} JfgWeaponIcon;
+
+/** @brief  Draws a weapon's icon, the game's own picture, during jfg_on_weapon_hud. @since 5 */
+void jfg_hud_weapon_icon(const JfgWeaponIcon* icon);
+```
+
+The icons stay the game's pictures, so **texture packs still replace them**. The game draws them, as part of its HUD,
+so they are **under the overlay**: never draw an overlay shape over an icon, or it covers it.
+
+### jfg_hud_disc <Status s="built" />
+
+```c
+typedef struct {
+    float x, y, radius;
+    unsigned int color;   // 0xRRGGBBAA
+} JfgHudDisc;
+
+/** @brief  A smooth dark disc drawn into the game's HUD, under the icons, during jfg_on_weapon_hud. @since 5 */
+void jfg_hud_disc(const JfgHudDisc* disc);
+```
+
+The backing an icon sits on can't come from the overlay (it would cover the icon), so the port draws it in the game's
+HUD the way the game draws its own panels' translucent backing, round at any resolution.
+
+### jfg_tribal_counts <Status s="built" />
+
+```c
+/** @brief  The area's Tribals: saved, killed and left. Returns 0 outside a game. @since 5 */
+int jfg_tribal_counts(int* saved, int* killed, int* left);
+```
+
 ## Fading a widget
 
 An opacity option is easy to get wrong: a half-transparent emblem drawn as two crossed bars and a gem on top shows the
@@ -219,7 +328,7 @@ bars through each other and through the gem. Draw each piece once, side by side:
 
 ## Examples
 
-Two of the official mods are built on this page:
+Three of the official mods are built on this page:
 
 - **Minimap**: draws the area's floors once into a 512 x 512 picture when the area loads (`jfg_overlay_image`), then
   each frame the picture (`jfg_overlay_draw_image`) and the hero, enemies, Tribals and pickups as shapes. It fades the
@@ -227,6 +336,10 @@ Two of the official mods are built on this page:
 - **Health Ring**: cancels the game's meter in `jfg_on_health_draw` and draws a ring of segments around an emblem,
   one polygon a segment, coloured by round, lined up with the weapon panel with `jfg_hud_in_corners`. Lost health
   stays white for a moment and drains away; each upgrade grows a new segment.
+- **Ammo Ring**: cancels the weapon panel in `jfg_on_weapon_hud`. A dark disc (`jfg_hud_disc`) with the weapon's icon
+  on it (`jfg_hud_weapon_icon`), ammo as an arc round it and the charge bar as a thin inner arc, the count as text. A
+  weapon change fans the owned weapons out beside it with the new one's name (`jfg_game_text(0x39 + w)`); a Tribal
+  saved shows a badge (`jfg_tribal_counts`); pick-ups (`jfg_on_hud_message`) come up as a feed of lines under it.
 
 A small one, a ring in the bottom-left corner that shows the share of health left:
 
