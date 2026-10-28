@@ -8,5 +8,6 @@ export default {
   'c-mod': 'A first code mod',
   'thrown-weapon': 'A thrown weapon',
   'charged-weapon': 'A charged weapon',
+  'custom-enemy': 'A new enemy',
   'texture-pack': 'An HD texture pack',
 };

@@ -1,0 +1,204 @@
+---
+title: 'Tutorial: a new enemy'
+description: Make a brand-new enemy for Jet Force Gemini Recompiled - its own rigged model, animations, projectile, sounds and behaviour, placed with Studio like a stock enemy - with the Rolling Shellback as the example.
+---
+
+# A new enemy
+
+How the **Rolling Shellback** is made: an armoured beetle that walks its patrol until it sees the hero, then curls
+into a ball and rolls at them. While it rolls, shots off the front and sides spark off its shell, and only shots from
+behind or blasts hurt it. A roll ends when it hits a wall, leaving it dizzy and open to hits, or when its time runs out.
+Then it stands and attacks again, rolling or firing a fan of three spines. Rolling into the hero knocks them back
+hard. Everything is new: model, animations, projectile, effects and sounds. It is placed in levels with Studio like any
+stock enemy.
+
+The reference is [C API: Squads and AI](/c-api/squads#new-enemy-types). Registering pack objects, effects and sounds
+works as in [A thrown weapon](/tutorials/thrown-weapon).
+
+<Callout type="info">
+You need the C mod setup from [A first code mod](/tutorials/c-mod), Blender for the model, and the decomp's
+`jfgformats` Python package, **0.9.1 or newer** for jointed models with their own animations, hit spheres and
+lighting.
+</Callout>
+
+<Steps>
+### Pick the enemy it is made like
+
+A new enemy is an object type made **like** a stock squad enemy. The game spawns, walks, hurts and kills it as that
+enemy, and your mod runs the rest. Pick one that moves the way yours should at rest: the Shellback is made like a
+mid-size ground soldier, object `0xEE`, whose definition is number **336**.
+
+Its animation set decides your model's animation list. The soldier's has 21 entries, which the game plays for its own
+actions:
+
+| List positions | The game plays them for |
+|---|---|
+| 0-3 | idles |
+| 4-8 | flinches |
+| 9, 11, 13, 15 | deaths |
+| 10, 12, 14, 16 | the dead pose after each (must **not** loop: the body fades when it ends) |
+| 17 | electrocuted |
+| 18 | firing |
+| 19, 20 | walk, run |
+
+Your own animations go after them, from 21 up.
+
+### Rig and animate the model
+
+Build it in Blender as one skinned mesh and export a `.glb`:
+- **Axes:** +Y up, facing glTF -Z (Blender +Y).
+- **Skin:** one skin with one root, and rigid skinning: each vertex on one bone, at most 3 bones a triangle.
+- **Keys:** rotation keys, translation on the root only, no scale keys.
+- **Limits:** up to 45 joints and 255 frames.
+- **Animations:** named `NN_name` in order. `_loop` makes one loop; a one-shot holds its last frame.
+- **Attach points:** empties named `barrel`, `point1`, `point2`, ...
+- **Hit spheres:** empties named `hit0`, `hit1`, ... under their bones, with `extras.radius`, `extras.percent` (damage
+  percent: 150 makes a weak spot) and `extras.weight` (how the lock-on favours it).
+
+The Shellback has 18 joints and 11 animations (idle, walk, turn, curl, ball, dizzy, uncurl, fire, hit, death, dead),
+three points (the spine muzzle, over the head, the weak spot) and three spheres (body, head, a weak plate at the back).
+Its ball spin is in the `ball` animation, on a bone at the ball's centre.
+
+### Build the pack
+
+`models.import_new` turns the `.glb` into a new model with its textures, one animation entry each, and the joint slot
+row. Lay the list out as the soldier's set asks, reusing animations where you have no special one:
+
+```python
+r = models.import_new("art/models/beetle.glb", name="beetle", log=print)
+# ... write r["textures"], r["packed"] and each r["animations"][i]["data"] as entries (see A thrown weapon)
+LIST = (["00_idle_loop"] * 4 + ["08_hit"] * 5 + ["09_death", "10_dead"] * 4 +
+        ["05_dizzy_loop", "07_fire", "01_walk_loop", "01_walk_loop",           # 17-20
+         "02_turn_loop", "03_curl", "04_ball_loop", "05_dizzy_loop", "06_uncurl"])  # 21-25: yours
+row = len(r["slotRow"]) // len(r["animations"])
+idx = {a["name"]: a["index"] for a in r["animations"]}
+slots = b"".join(r["slotRow"][idx[n] * row:(idx[n] + 1) * row] for n in LIST)
+```
+
+Then in `jfg_assets.json`:
+- the animation rows: `"animRows": [{ "model": "model_beetle", "anims": ["anim_00_idle_loop", ...], "slots":
+  "assets/slots_beetle.bin" }]`;
+- the definition, a copy of 336 (`"copyOf": 336`) with:
+  - `+0xE0` your model (a `u32` fixup);
+  - `+0x00` its scale;
+  - the hit box: `+0xB4`/`+0xB6`/`+0xB8` its centre (`s16`), `+0xBC` its radius, `+0xC0` its half height;
+  - `+0x100` the collision radius it rolls and bumps with;
+- the object type: `"objtypes": [{ "append": "objtype_beetle", "def": "objdef_beetle", "like": 238 }]`.
+
+<Callout type="warning">
+- **The hit box is tested before the spheres:** make it hold every sphere in every pose.
+- **The collision radius isn't scaled with the enemy:** set it for its final size.
+</Callout>
+
+### Register the type
+
+```c
+static int type_id = -1;
+
+RECOMP_CALLBACK("*", jfg_on_game_tick) void tick(int frames) {
+    if (type_id < 0) {
+        JfgSquadTypeDef d = { "mymod:beetle", "mymod:objdef_beetle", 0,
+                              13, { 0, 4, -10 },        // head joint and the eye point in its frame
+                              { 12, 0, 0 }, { 0x5D, 0, 0 },  // the neck leans into turns
+                              0 };                      // no aim joint: it would turn the head inside the ball
+        type_id = jfg_squad_type_register(&d);
+    }
+}
+```
+
+What the type gets:
+- its own copy of the soldier's data row, with no body parts and your joints;
+- its definition's scale;
+- no soldier voices.
+
+From here on, `jfg_on_squad_tick` runs for each of its members.
+
+### Take a member over and play your animations
+
+While the game walks it, wait for the hero. Then take it over with a mission of your own and play your animations
+yourself:
+
+```c
+static void play(void* obj, unsigned char* data, int anim) {
+    data[0x4B] = 7;                    // animation state 7: nothing in the game advances it
+    data[0x19] = 0;                    // run with an idle entry's flags (no firing)
+    *(float*)(data + 0x60) = 0.0f;
+    jfg_object_anim_set(obj, anim, 0);
+}
+
+RECOMP_CALLBACK("*", jfg_on_squad_tick) void member(JfgSquadTick* t) {
+    if (t->type != type_id) return;
+    unsigned char* data = t->data;
+    if (/* you just saw the hero */ 1 && jfg_squad_set_mission(t->member, 0x20, 7, 0, 0, 0))
+        play(t->member, data, 22);     // 22: the curl
+}
+```
+
+Each tick, step the phase at object `+0x28`: wrap a loop below 1.0, hold a one-shot at 1.0. Also set object `+0xAC`
+to the phase before and `+0xB0` to the step. Drive it **only while data `+0x4B` is still 7** and its health (data
+`+0xA6`) is above 0, because a hit reaction, burning or death takes over. To hand it back, call
+`jfg_squad_clear_mission(member, 0x20, cooldown)` and set data `+0x4B` and `+0x0A` to 0.
+
+### Roll it
+
+To move it yourself, turn its steering off and its track physics on every tick, then set its velocity in level units
+a squad call:
+
+```c
+data[0] |= 0x04;                       // b26: the game doesn't steer it
+data[1] |= 0x04;                       // b18: walls and floors stop it
+float* v = (float*)((unsigned char*)obj + 0x1C);
+v[0] = heading_x * speed;
+v[2] = heading_z * speed;
+```
+
+To bounce, cast a ray just ahead with `jfg_level_ray`. When it hits a wall (a normal that's not floor-like), reflect
+the heading off the normal, play a crack and puff some dust.
+
+<Callout type="warning">
+Other mods knock enemies around (a blast, the Concussion Cannon). While `jfg_enemy_flung(obj)` is 1, don't set its
+velocity, or you undo their push at once. When it lands, roll on in the direction it was thrown.
+</Callout>
+
+### Armour
+
+```c
+jfg_squad_set_armour(obj, 1);          // shots from the front and sides stop on its spheres, no damage
+...
+if (jfg_squad_deflects(obj) > 0) { /* a ping and a spark */ }
+...
+jfg_squad_set_armour(obj, 0);          // off when it stops rolling: dizzy, it can be hurt anywhere
+```
+
+### Spines and the ram
+
+Its spines are your own objects, moved by your mod each tick. Test each one against the hero with `jfg_hero_shot`,
+from its last position to its new one. A hit gets the hero's red flash, shake and hurt voice, as an enemy's shot does:
+
+```c
+JfgHeroShot shot = { { a[0], a[1], a[2] }, { b[0], b[1], b[2] }, radius, 256 /* one unit */, 0, spine };
+if (jfg_hero_shot(&shot)) free_spine(spine);
+```
+
+The ram is the same call, from the ball's centre to the hero, with the ball's radius. Follow it with
+`jfg_hero_push(hero, x, z, ticks)` to knock the hero back the way it rolled.
+
+### Place it and try it
+
+In Studio, add your mod as a dependency by its folder and place a squad of `mymod:objtype/beetle`
+([Squads that move](/studio/squads#another-mods-enemies)). A small walled room with a few pillars is the quickest
+test, and the game can start straight in it:
+
+```powershell
+JetForceGeminiRecompiled.exe --start-level mymod_room:level_room --character juno
+```
+</Steps>
+
+## Make it yours
+
+- **Size:** the definition's scale times the squad's size percent. Read the member's own scale (object `+0x08`) in
+  your code, so effects, spines and wall rays fit any size.
+- **Keep members apart:** squads spawn their members at one point. Push each away from the others a little each tick.
+- **Options:** the Shellback's speed, turning, bounces, roll time, pauses, ram damage and knockback are all mod options,
+  so players can tune it.
+- **Health:** each placed squad sets it.

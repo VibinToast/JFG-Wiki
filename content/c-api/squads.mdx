@@ -24,11 +24,16 @@ is the squad's, not the video's.
 | `jfg_squad_alert` | Wake a squad up | <Status s="planned" /> |
 | `jfg_squad_set_behaviour` | Aggression, cover, retreat | <Status s="planned" /> |
 | `jfg_squad_spawn` | A squad at run time | <Status s="planned" /> |
-| `jfg_on_squad_member_tick` | Each squad tick of a member | <Status s="planned" /> |
+| `jfg_on_squad_member_tick` | Each squad tick of any member (for new types: `jfg_on_squad_tick`) | <Status s="planned" /> |
 | `jfg_on_squad_fire` | A member is about to attack | <Status s="planned" /> |
 | `jfg_on_squad_alerted` | A squad spotted a hero | <Status s="planned" /> |
 | `jfg_on_squad_cleared` | The last member died | <Status s="planned" /> |
-| `jfg_squad_type_register` | A new squad enemy type | <Status s="planned" /> |
+| `jfg_squad_type_register`, `jfg_on_squad_tick` | A new enemy type, run by your mod | <Status s="built" /> |
+| `jfg_squad_set_mission`, `jfg_squad_clear_mission` | Take a member over, hand it back | <Status s="built" /> |
+| `jfg_object_anim_set` | Play any animation of a model | <Status s="built" /> |
+| `jfg_squad_set_armour`, `jfg_squad_deflects`, `jfg_squad_forget` | Shots stop on its shell | <Status s="built" /> |
+| `jfg_hero_shot` | Your projectile hits the hero | <Status s="built" /> |
+| `jfg_enemy_fling`, `jfg_enemy_flung` | Knock an enemy back the game's way | <Status s="built" /> |
 | `"baddies"`, `"animRows"`, `"objtypes"` in `jfg_assets.json` | Reskins and animation tables as data | <Status s="built" /> |
 
 ## Squads and members
@@ -149,34 +154,168 @@ RECOMP_CALLBACK("*", jfg_on_squad_alerted) void my_alert(JfgObject* squad, int p
 RECOMP_CALLBACK("*", jfg_on_squad_cleared) void my_cleared(JfgObject* squad);
 ```
 
-## New squad types
+## New enemy types
 
-Today a pack can reskin a squad enemy (a copy of a stock type with its own model and size, `"objtypes"` with
-`"like"`), borrow animations (`"animRows"`) and patch its animation table (`"baddies"`). New types with their own
-attacks and moves need code:
+A pack adds an enemy as an object type made like a stock squad enemy: `"objtypes"` with `"like"` in
+`jfg_assets.json`, its definition a copy of that enemy's with your model. Your mod registers it and runs its members.
+The game still spawns them from squadrons, walks them on their patrol, and hurts and kills them, and your code takes
+over whenever it wants. [A new enemy](/tutorials/custom-enemy) builds one end to end.
 
-### jfg_squad_type_register <Status s="planned" />
+<Callout type="info">
+**Since API version 6.** Squadrons of your type are placed with Studio like any other squad: add your mod as a
+dependency by its folder and place `<mod id>:objtype/<name>` ([Squads that move](/studio/squads)).
+</Callout>
+
+### jfg_squad_type_register <Status s="built" />
 
 ```c
-/** @brief A squad enemy type. */
 typedef struct {
-    const char* name;        ///< "squad/fire_ant"
-    int   like;              ///< Stock baddy type it moves and animates like
-    int   model;             ///< -1 for the like type's
-    int   health;
-    float speed;             ///< Multiplies the like type's
-    void (*on_tick)(JfgObject* member, int frames);     ///< NULL: the like type's moves
-    void (*on_fire)(JfgSquadFire* f);                   ///< NULL: the like type's attack
+    const char* name;      // "mymod:beetle"
+    const char* def_name;  // your pack's appended definition, "mymod:objdef_beetle"
+    int flags;             // JFG_SQUAD_KEEP_VOICES, JFG_SQUAD_KEEP_BODY_PARTS
+    int head;              // your model's head joint: the eye point (aim, sight) is head_offset in its frame
+    int head_offset[3];    // -128..127
+    int lean[3];           // up to three joints that bend into turns (lean_weight 0..255 each); 0 = none
+    int lean_weight[3];
+    int aim;               // the joint that turns toward the hero; 0 = none
 } JfgSquadTypeDef;
+#define JFG_SQUAD_KEEP_VOICES 1
+#define JFG_SQUAD_KEEP_BODY_PARTS 2
 
 /**
- * @brief  Registers a squad enemy type; squadrons in levels and jfg_squad_spawn can use it.
- * @return Its type number, or -1.
- * @target 7
- * @note   Only in jfg_on_register.
+ * @brief  Registers your pack's object type as an enemy your mod runs.
+ * @return Its type number (the same again for a name registered before), -1 if the definition is bad.
+ * @note   Call it in your first jfg_on_game_tick. Joints of -1 keep the like type's numbers, which name other bones
+ *         on a new model: give your own.
  */
 int jfg_squad_type_register(const JfgSquadTypeDef* def);
 ```
+
+What the type gets from the port:
+- **Its own data row:** a copy of the like type's with **no body parts**, and your head, lean and aim joints. The
+  stock body parts cut limbs off the model on a killing hit, and would cut your model up.
+- **Its own size:** the definition's scale (`+0x00`) times the squadron's size percent. On its own, the game uses
+  only the percent.
+- **Silence:** the like type's hurt and death voices don't play for it. Play your own.
+
+### jfg_on_squad_tick <Status s="built" />
+
+```c
+typedef struct {
+    int   type;       // what jfg_squad_type_register returned
+    void* member;     // the object
+    void* data;       // its squad control data (object +0x68)
+    int   frames;     // this call's update rate: squads move once per call, 30 times a second
+    int   run_stock;  // set to 1 to run the like type's own routine after yours
+} JfgSquadTick;
+
+/**
+ * @brief  A member of a registered type, where the game runs its type's own routine (before steering and the move).
+ */
+RECOMP_CALLBACK("*", jfg_on_squad_tick) void my_tick(JfgSquadTick* t);
+```
+
+### jfg_squad_set_mission, jfg_squad_clear_mission <Status s="built" />
+
+```c
+/**
+ * @brief  Takes a member over: mission 7 under your group (0x20 up). Nothing in the game replaces it but burning,
+ *         hit reactions and electrocution. Only inside jfg_on_squad_tick, for that member.
+ * @return 1 if set.
+ */
+int  jfg_squad_set_mission(void* member, int group, int mission, int a, int b, int c);
+/** @brief Hands it back; cooldown: ticks before it may fire again. */
+void jfg_squad_clear_mission(void* member, int group, int cooldown);
+```
+
+### jfg_object_anim_set <Status s="built" />
+
+```c
+/**
+ * @brief  Plays animation `anim` of the object's model list from phase / 1000. You advance the phase (object +0x28,
+ *         0..1: a loop wraps below 1.0, a one-shot holds at 1.0).
+ */
+void jfg_object_anim_set(void* object, int anim, int phase);
+```
+
+For a squad member, with every move:
+- set its animation state (data `+0x4B`) to **7** first, which nothing in the game advances;
+- set its set entry (data `+0x19`) to an entry of the like type's set whose flags it should run with. Use **0**, an
+  idle that doesn't fire, never your animation number;
+- set data `+0x60` (the phase before) to 0. As you step, set object `+0xAC` to the phase before and `+0xB0` to the
+  step.
+
+Drive it only while data `+0x4B` is still 7 and its health (data `+0xA6`, a `short`) is above 0. A hit reaction,
+burning or death replaces state 7. To hand it back, call `jfg_squad_clear_mission` and set data `+0x4B` and
+`+0x0A` to 0. Death is always the game's: it plays your list's death animations and fades the body.
+
+### jfg_squad_set_armour, jfg_squad_deflects, jfg_squad_forget <Status s="built" />
+
+```c
+/**
+ * @brief  Shell armour: shots stop on the member's hit spheres with no damage. Mode 1: all but those from behind;
+ *         2: all; 0: none. Blasts always hurt.
+ */
+void jfg_squad_set_armour(void* member, int mode);
+/** @brief Shots its armour stopped since the last call (not bumps: touching the hero isn't a shot). */
+int  jfg_squad_deflects(void* member);
+/** @brief Drop a member that died or was freed from the armour list. */
+void jfg_squad_forget(void* member);
+```
+
+### jfg_hero_shot <Status s="built" />
+
+```c
+typedef struct {
+    float from[3], to[3];  // your projectile's last and current position
+    float radius;
+    int   damage;          // 256 a unit of health
+    int   weapon;          // 0..15, for what the game records
+    void* source;          // your projectile
+} JfgHeroShot;
+
+/**
+ * @brief  Your projectile hits the first player's hero as an enemy's shot does: against the hero's hit spheres, with
+ *         the hero's protection, the red flash, the shake and the hurt voice; death is the hero code's.
+ * @return 1 if it hit.
+ */
+int jfg_hero_shot(const JfgHeroShot* shot);
+```
+
+Use it for anything of yours that hurts the hero:
+- a projectile, each tick, from its last position to its new one;
+- a body slam, from the enemy to the hero, with the enemy's radius.
+
+### jfg_enemy_fling, jfg_enemy_flung <Status s="built" />
+
+```c
+typedef struct {
+    float vx, vy, vz;  // level units a squad call (squads move 30 times a second: twice a 1/60 s speed)
+    int   calls;       // its AI is off this long, or until it lands: walkers about 12, flyers about 14
+} JfgFling;
+
+/**
+ * @brief  Knocks a squad member back the game's own way: walls stop it, and it lands where the throw takes it.
+ * @return 1 if flung; 0 if the game can't move it so (no collision data, held still, riding): move it yourself.
+ */
+int jfg_enemy_fling(void* enemy, const JfgFling* f);
+/** @brief 1 while a squad member is flung, by anyone. */
+int jfg_enemy_flung(void* enemy);
+```
+
+The hero's knockback is `jfg_hero_push(hero, x, z, ticks)`: x and z level units per 1/60 s, for that many ticks. If
+your mod sets its enemy's velocity every tick, skip that while `jfg_enemy_flung` is 1. Otherwise other mods' pushes,
+such as a blast or a weapon, are undone at once.
+
+<Callout type="warning" title="Learned the hard way">
+- **Line up your model's animation list with the like type's set.** The game picks positions 0-20 for its own
+  actions: idles, flinches, deaths and the dead pose, fire, walk. The dead pose must not loop, or the body never
+  fades.
+- **The hit box comes first.** Shots test the definition's hit box before your hit spheres, so it must hold every
+  sphere in every pose.
+- **The collision radius (definition `+0x100`) isn't scaled:** set it for the final size.
+- **Use `jfgformats` 0.9.1 or newer.** Older lighting lists crash the game when a lit squad member is drawn.
+</Callout>
 
 ## Example: ambush when the hero picks up a key
 
