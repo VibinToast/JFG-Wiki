@@ -18,4 +18,5 @@ export default {
   audio: 'Music and sound',
   effects: 'Effects',
   drawing: 'Drawing',
+  overlay: 'On-screen overlay',
 };

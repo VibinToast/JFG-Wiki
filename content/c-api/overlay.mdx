@@ -1,0 +1,248 @@
+---
+title: 'C API: On-screen overlay'
+description: Drawing a mod's own interface over Jet Force Gemini Recompiled at the window's full resolution - pictures, polygons and circles - and replacing the health meter.
+---
+
+# On-screen overlay
+
+The overlay is how a mod draws its own interface: a minimap, a new health meter, markers, gauges. The port draws what
+a mod sends **over the game, at the window's own resolution and anti-aliased**, so it stays sharp at 4K instead of
+being drawn into the game's low-resolution picture. Shapes and pictures are drawn with Dear ImGui on the port's side;
+the mod only sends numbers.
+
+<Callout type="info">
+**API version 5.** Everything on this page comes with API version 5, in the next port release. Check
+`jfg_api_version() >= 5` before using it.
+</Callout>
+
+| Entry | Brief | Status |
+|---|---|---|
+| `jfg_overlay_size` | The overlay's width and height | <Status s="built" /> |
+| `jfg_overlay_image` | Upload a picture (RGBA, up to 1024 x 1024) | <Status s="built" /> |
+| `jfg_overlay_draw_image` | Draw an uploaded picture this frame | <Status s="built" /> |
+| `jfg_overlay_polygon` | Draw a filled and/or outlined polygon this frame | <Status s="built" /> |
+| `jfg_overlay_circle` | Draw a filled and/or outlined circle this frame | <Status s="built" /> |
+| `jfg_hud_in_corners` | Whether the HUD is at the window's edges | <Status s="built" /> |
+| `jfg_on_health_draw` | The health meter is about to be drawn: read it, or replace it | <Status s="built" /> |
+
+## How it works
+
+<Steps>
+
+### Units
+
+Places and sizes are in **overlay units**: the game's picture is always **240 high**, and as wide as it is shown
+(320 in 4:3, about 427 in 16:9; ask `jfg_overlay_size`). (0, 0) is the picture's top left. These are the same units
+as the game's own HUD, so a shape at x 19 lines up with a HUD piece at x 19. The port scales them to the window, so
+one unit is about 4.5 pixels at 1080p.
+
+### Send it every frame
+
+Overlay drawing is **immediate**: send your shapes each frame the game draws, from `jfg_on_game_tick`,
+`jfg_on_draw_hud` or `jfg_on_health_draw`. What a frame sent is shown from the end of that frame until the next one
+replaces it. Stop sending and it's gone next frame.
+
+### When it shows
+
+- During play, over the game and its HUD.
+- **Hidden while the settings menu or a prompt is open**, so it never covers them (the game keeps drawing behind the
+  menu, so your mod keeps sending). It comes back when the menu closes.
+- **Still shown with F10's tools bar up**: the bar leaves the HUD visible, so the overlay stays too.
+- Gone a quarter of a second after the game stops drawing frames (loading, the title screen without a game).
+- To hide yours in the pause menu or in cutscenes, check `jfg_game_paused()` or draw from an event that only fires
+  during play, like `jfg_on_health_draw`.
+
+### Colours and opacity
+
+Colours are `0xRRGGBBAA`. Alpha fades a shape. Shapes are blended one at a time, so **where two half-transparent
+shapes overlap, the overlap is darker and the lower one shows through**. For a whole widget that fades as one, build
+it from shapes that meet edge to edge instead of stacking them (see [Fading a widget](#fading-a-widget)).
+
+</Steps>
+
+## Pictures
+
+### jfg_overlay_size <Status s="built" />
+
+```c
+/**
+ * @brief  The overlay's size: out[0] its width, out[1] its height (240).
+ * @since  5
+ */
+void jfg_overlay_size(float* width_height);
+```
+
+### jfg_overlay_image <Status s="built" />
+
+```c
+/**
+ * @brief  Uploads picture id: w x h colours 0xRRGGBBAA, at most 1024 x 1024. Kept until sent again.
+ * @note   Send it once, or when it changes: it is copied and uploaded to the graphics card, which costs time.
+ *         A picture that changes every frame is better drawn as shapes.
+ * @since  5
+ */
+void jfg_overlay_image(int id, int w, int h, const unsigned int* rgba);
+```
+
+### jfg_overlay_draw_image <Status s="built" />
+
+```c
+typedef struct {
+    float x, y, w, h;   // where, in overlay units
+    unsigned int tint;  // multiplies the picture's colours (0xFFFFFFFF as it is; the alpha fades it)
+    int id;
+} JfgOverlayImage;
+
+/**
+ * @brief  Draws uploaded picture id this frame, stretched to x, y, w, h (smoothly filtered).
+ * @since  5
+ */
+void jfg_overlay_draw_image(const JfgOverlayImage* image);
+```
+
+A picture drawn bigger than its pixels gets soft, not blocky. Upload it at about the size it shows at on a large
+window (a 512 x 512 map is sharp up to 1440p at a third of the screen's height).
+
+## Shapes
+
+### jfg_overlay_polygon <Status s="built" />
+
+```c
+typedef struct {
+    const float* xy;    // count points: x, y, x, y, ... (at most 64)
+    int count;
+    unsigned int fill;  // 0: not filled (any polygon whose sides do not cross, convex or not)
+    unsigned int line;  // 0: no outline
+    float thickness;    // of the outline, in overlay units
+} JfgOverlayPolygon;
+
+/**
+ * @brief  Draws a polygon this frame: filled, outlined, or both (the outline over the fill).
+ * @since  5
+ */
+void jfg_overlay_polygon(const JfgOverlayPolygon* polygon);
+```
+
+Curved shapes are polygons with enough points: a ring segment is its outer arc one way and its inner arc back
+(8 points along each arc looks round at any size). Concave shapes fill correctly, so one segment is one polygon, with
+no seams inside it.
+
+### jfg_overlay_circle <Status s="built" />
+
+```c
+typedef struct {
+    float x, y, radius;
+    unsigned int fill, line;  // 0: none
+    float thickness;
+} JfgOverlayCircle;
+
+/**
+ * @brief  Draws a circle this frame. A ring is a circle with only a line.
+ * @since  5
+ */
+void jfg_overlay_circle(const JfgOverlayCircle* circle);
+```
+
+## Lining up with the HUD
+
+### jfg_hud_in_corners <Status s="built" />
+
+```c
+/**
+ * @brief  1 while the single-player HUD is at the window's edges (the HUD in Screen Corners option, in
+ *         widescreen), 0 while it is in the middle 4:3 area.
+ * @since  5
+ */
+int jfg_hud_in_corners(void);
+```
+
+The HUD's left edge is at x 0 when it is in the corners, else at `(width - 320) / 2`. Add the game's own HUD
+position to that. The weapon panel's outer edge is 19 units in from the HUD's left and its top 13.6 units down, so a
+widget at those insets lines up with it:
+
+```c
+float screen[2];
+jfg_overlay_size(screen);
+const float hud_left = jfg_hud_in_corners() ? 0.0f : (screen[0] - 320.0f) / 2;
+const float left = hud_left + 19.0f;               // the weapon panel's outer edge
+const float right = screen[0] - left;              // the same inset on the right
+const float bottom = screen[1] - 13.6f;            // the panel's top inset, from the bottom
+```
+
+## The health meter
+
+### jfg_on_health_draw <Status s="built" />
+
+```c
+typedef struct {
+    void* hero;
+    int health;     // units, 0 .. max
+    int segments;   // the meter's segments: 6, one more per health upgrade, up to 12
+    int max;        // 5 * segments + 4
+    int character;  // 0 Vela, 1 Juno, 2 Lupus
+    int players;    // 1 in the single-player game
+    int frames;     // video frames the tick covers
+    int cancel;     // set to 1 to leave the game's meter out
+} JfgHealth;
+
+/**
+ * @brief  Each frame the health meter is drawn, before the game draws it. Not in the pause menu, cutscenes or other
+ *         times the HUD is hidden, so drawing your own meter from here shows it exactly when the game's would show.
+ * @since  5
+ */
+RECOMP_CALLBACK("*", jfg_on_health_draw) void my_health(JfgHealth* h);
+```
+
+**How the game counts health.** The meter has **segments**: 6 on a new game, one more for each health upgrade, up to
+12. Health fills them **five times over**, so the most health is `5 * segments + 4` (34 at the start, 64 with every
+upgrade):
+
+- `health / (segments + 1)` is how many times the segments have been filled (0 to 4),
+- `health % (segments + 1)` is how many segments of the next round are lit.
+
+Health crystals add 1, 5, or fill it; a health upgrade adds a segment and fills it; a hit drains health over a few
+moments rather than all at once.
+
+To replace the meter, set `cancel` and draw your own with the overlay. Leave `cancel` at 0 when `players` isn't 1 (the
+split-screen game) unless you draw for each player. `jfg_hud_hide_health` ([Custom heroes](/c-api/heroes)) hides it
+for a hero whose health your mod keeps itself.
+
+## Fading a widget
+
+An opacity option is easy to get wrong: a half-transparent emblem drawn as two crossed bars and a gem on top shows the
+bars through each other and through the gem. Draw each piece once, side by side:
+
+- Cut shapes at the piece they meet instead of letting it cover them (an arm of a cross ends in an arc at the gem's
+  rim; concave polygons make that one shape).
+- Give a piece one outline round its whole edge, not one per part.
+- Keep the gaps between neighbouring shapes (ring segments) instead of laying them over a backing shape.
+
+## Examples
+
+Two of the official mods are built on this page:
+
+- **Minimap**: draws the area's floors once into a 512 x 512 picture when the area loads (`jfg_overlay_image`), then
+  each frame the picture (`jfg_overlay_draw_image`) and the hero, enemies, Tribals and pickups as shapes. It fades the
+  old picture out and the new one in when the area changes.
+- **Health Ring**: cancels the game's meter in `jfg_on_health_draw` and draws a ring of segments around an emblem,
+  one polygon a segment, coloured by round, lined up with the weapon panel with `jfg_hud_in_corners`. Lost health
+  stays white for a moment and drains away; each upgrade grows a new segment.
+
+A small one, a ring in the bottom-left corner that shows the share of health left:
+
+```c
+#include "jfg_api.h"
+
+RECOMP_CALLBACK("*", jfg_on_health_draw) void my_health(JfgHealth* h) {
+    if (h->players != 1) return;
+    h->cancel = 1;
+    float screen[2];
+    jfg_overlay_size(screen);
+    JfgOverlayCircle c = { 40.0f, screen[1] - 40.0f, 20.0f, 0x10203080, 0x40E070FF, 3.0f };
+    jfg_overlay_circle(&c);                     // the ring
+    c.radius = 14.0f * h->health / h->max + 1.0f;
+    c.fill = 0x40E070FF;
+    c.line = 0;
+    jfg_overlay_circle(&c);                     // a dot that shrinks as health goes
+}
+```
