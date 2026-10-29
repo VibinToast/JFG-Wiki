@@ -314,6 +314,9 @@ such as a blast or a weapon, are undone at once.
 - **The hit box comes first.** Shots test the definition's hit box before your hit spheres, so it must hold every
   sphere in every pose.
 - **The collision radius (definition `+0x100`) isn't scaled:** set it for the final size.
+- **Read a member only inside its own `jfg_on_squad_tick`.** The game frees members on its own (after the death fade,
+  or when a squad despawns them), and a pointer you kept then points at something else. Forget members no squad tick
+  has seen for a second, and use `jfg_on_kill` (its `victim`) for deaths.
 - **Use `jfgformats` 0.9.1 or newer.** Older lighting lists crash the game when a lit squad member is drawn.
 </Callout>
 
