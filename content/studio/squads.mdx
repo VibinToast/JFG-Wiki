@@ -109,10 +109,13 @@ the wrong one (`squad-stock`), makes it spawn at once and turns a clockwise area
 ## Another mod's enemies
 
 A code mod can add enemies of its own ([A new enemy](/tutorials/custom-enemy)). To place them:
-1. Add that mod as a dependency by its folder: **Add a mod folder...** in the project's dependencies, or
-   `add_dependency` with `mod_folder` over MCP. Studio reads its `mod.toml` and the object types in its
-   `jfg_assets.json`.
-2. Place a squad with the member type `<mod id>:objtype/<name>`, for example `jfg_shellback:objtype/shellback`.
+1. Add that mod as a dependency by its folder: in the Project window open **Dependencies** and press **Add a mod
+   folder...** (or `add_dependency` with `mod_folder` over MCP). Studio reads its `mod.toml` and the object types in
+   its `jfg_assets.json`. **Remove** next to a dependency takes it off again.
+2. In **Prefabs**, under **Other mods' enemies**, pick the enemy, set how many members, and drag it into the Scene
+   or press **Place**. Studio makes a squad with a region to keep to, copied from a stock squad of the enemy it's made
+   like. Over MCP, `place_squad` with the member type `<mod id>:objtype/<name>`, for example
+   `jfg_shellback:objtype/shellback`.
 
 The level names the type, not a number, so it works whatever number the game gives the type each start. The built
 pack lists the mod as a dependency, so the game loads it first. Squads of another mod's type get their members at
