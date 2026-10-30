@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', images: OG_IMAGES.map((i) => i.url) },
 };
 
-const RECOMP_REPO = 'https://github.com/VibinToast/JetForceGemini-Recomp';
+const RECOMP_REPO = 'https://github.com/VibinToast/JetForceGemini-Recompiled';
 
 const navbar = (
   <Navbar
